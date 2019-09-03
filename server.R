@@ -1,0 +1,496 @@
+library(shiny)
+library(readxl)
+library(tidyverse)
+library(magrittr)
+library(patchwork)
+library(pheatmap)
+library(shinyjs)
+library(plotly)
+library(shinyWidgets)
+library(WriteXLS)
+library(reshape2)
+library(jsonlite)
+
+
+
+shinyServer(function(input, output) {
+  
+  datasets <- jsonlite::fromJSON(txt = 'config.json')$Datasets
+  
+  # Dataset selector UI element
+  output$data.select <- renderUI({
+    selectInput(inputId = 'dataset', label = 'Dataset:', choices = datasets$Name, selected = datasets$Name[1])
+  })
+  
+  # Loading selected dataset
+  property.data <- reactive({
+    fpath <- datasets %>% filter(Name == input$dataset) %>% pull(Path)
+    nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors)
+    if(str_detect(fpath, 'xlsx?')){
+      d <- read_excel(fpath)
+    }else if(str_detect(fpath, 'csv')){
+      d <- read.csv(fpath, header = T)
+    }
+    
+    d <- cbind(pID = (1:nrow(d)) + 1, d) # Adds pID column starting at 2
+    d <- d %>% select(-c(which(colSums(is.na(d)) == nrow(d)))) # Removes all NA columns
+    d <- d %>% mutate_at((1:nf) + 1, as.factor)
+  })
+  
+# Number of factors 
+  
+  n.factors <- reactive({
+    nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors)
+    nf + 1 
+  })
+  
+  output$nf = renderText(n.factors())
+  
+  # UI element for averaging factors
+  avg.select <- renderUI({
+      selectInput(inputId = 'avg', label = 'Averaging factors:', choices = colnames(property.data())[2:n.factors()], multiple = T, colnames(property.data())[2:(n.factors() - 2)])
+  })
+  output$avg.select <- avg.select
+  
+# Data selection (originally called 'Exclusions', hence the variable names.)
+  observeEvent(input$dataset,{
+   nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors) +1
+   lapply(1:nf, function(x){
+      cname <- reactive({colnames(property.data())[x]})
+      if(x == 1){
+        choices <- reactive({(property.data()[, x] %>% as.character %>% as.numeric %>% unique %>% sort %>% trunc)})
+      }else{
+        choices <- reactive({(property.data()[, x] %>% as.character %>% unique %>% sort)})
+      }
+      ui.element <- renderUI({
+        pickerInput(inputId = str_c('exclusions.', cname()), label = cname(), choices = choices(), selected = choices(), multiple = T, options = list(`actions-box` = T, `live-search` = T))
+      })
+      output[[paste0('e_', x)]] <- ui.element
+    })
+   lapply((nf + 1):200, function(x){
+     output[[paste0('e_', x)]] <- NULL
+   }) 
+  })
+
+  
+  # Exclusions UI
+    ex.ui <- renderUI({
+      lapply(1:n.factors(), function(x){
+        uiOutput(paste0('e_', x))
+      })
+    })
+
+  
+  # Highlights 
+  observeEvent(input$dataset,{
+    nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors) +1
+    lapply(1:nf, function(x){
+      cname <- reactive({colnames(property.data())[x]})
+      if(x == 1){
+        choices <- reactive({(property.data()[, x] %>% as.character %>% as.numeric %>% unique %>% sort %>% trunc)})
+      }else{
+        choices <- reactive({(property.data()[, x] %>% as.character %>% unique %>% sort)})
+      }
+      ui.element <- renderUI({
+        pickerInput(inputId = str_c('highlights.', cname()), label = cname(), choices = choices(), multiple = T, options = list(`actions-box` = T, `live-search` = T))
+      })
+      output[[paste0('h_', x)]] <- ui.element
+    })
+    lapply((nf + 1):200, function(x){
+      output[[paste0('h_', x)]] <- NULL
+    }) 
+  })
+  
+  # Highlights UI
+  hi.ui <- renderUI({
+    lapply(1:n.factors(), function(x){
+      uiOutput(paste0('h_', x))
+    })
+  })
+  
+  ## Functions for data filtering and highlights
+  filterData <- function(dfr){
+    index <- rep(T, nrow(dfr))
+    for(i in 1:n.factors()){
+      index <- index & (((dfr %>% pull(i)) %in% input[[paste0('exclusions.', colnames(property.data())[i])]]) | is.na(dfr %>% pull(i)))
+    }
+    dfr <- dfr[index, ] %>% mutate(pID = as.integer(pID))
+    return(dfr)
+  }
+  
+  ## Preview tab
+  prev.factors <- reactive({colnames(property.data())[2:n.factors()]})
+  output$prev.factors <- renderUI(selectInput('prev.factors', 'Select main effect:', choices = prev.factors(), selected = 'Genotype'))
+  
+  filt.data <- reactive({filterData(property.data())})
+
+  output$test.table <- renderTable(filt.data())
+  
+  hl.pIDs <- reactive({
+    p.IDs <- numeric()
+    for(i in 1:n.factors()){
+      p.IDs <- c(p.IDs, filt.data() %>% filter_at(i, all_vars(. %in% input[[paste0('highlights.', colnames(filt.data())[i])]])) %>% pull(pID)) %>% unique
+    }
+    p.IDs
+  })
+  
+
+  out.vars <- reactive({colnames(property.data())[(n.factors() +1):ncol(property.data())]})
+  
+  
+  ###Preview plot
+  prev.facs <- reactive({input$prev.factors})
+  prev.plot <- reactive({
+    prev.table <- melt(filt.data(), id.vars = colnames(filt.data()[1:n.factors()]))
+    pl <- ggplot(prev.table, aes_string(x = prev.facs(), y = 'value')) + facet_wrap(~variable, scales = 'free') + theme_bw()
+    if(input$prev.type == 'box'){
+      pl <- pl + geom_boxplot(fill = 'gray87', outlier.shape = 0)
+    }else{
+      pl <- pl + geom_violin(fill = 'gray87')
+    }
+    
+    hl <- prev.table$pID %in% hl.pIDs()
+    
+    tooltip.txt <- apply(prev.table[, 1:n.factors()], 1, function(x){
+      paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
+    })
+    
+    pl <- pl + geom_jitter(width = 0.2, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+  
+    ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
+    
+    ply
+  })
+  
+  output$prev.plot <- renderPlotly(prev.plot()$plot)
+  
+  
+  
+  ### Main plot UI elements
+  plot_out_var <-  renderUI({
+    choice <- reactive({out.vars()})
+    selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice())
+  })
+  output$plot_out_var <- plot_out_var
+  
+  plot_effect <- renderUI({
+      choice <- reactive({colnames(property.data())[2:n.factors()]})
+      selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice())
+  })
+  output$plot_effect <- plot_effect
+  
+  plot_x <- renderUI({
+      choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
+      selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice())
+  })
+  output$plot_x <- plot_x
+  
+  plot_y <- renderUI({
+      choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
+      selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice())
+  })
+  output$plot_y <- plot_y
+  
+  addFaceting <- function(pl){
+    if(input$plot_x != 'None' & input$plot_y == 'None'){
+      form <- str_c('.~', input$plot_x) %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }else if(input$plot_x == 'None' & input$plot_y != 'None'){
+      form <- str_c(input$plot_y, '~.') %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }else if(input$plot_x != 'None' & input$plot_y != 'None'){
+      form <- str_c(input$plot_y, '~', input$plot_x) %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }
+    return(pl)
+  }
+  
+  ### Distribution plot
+  
+  dist.plot <- reactive({
+    x.var <- input$plot_effect %>% as.character
+    y.var <- input$plot_out_var %>% as.character
+    
+    if(input$plot_data == 'cell'){
+      
+      dplot <- ggplot(filt.data(), aes_string(x = x.var, y = y.var)) + theme_bw()
+      
+      if(input$plot_dist_type == 'box'){
+        dplot <- dplot + geom_boxplot(fill = 'gray87', outlier.shape = NA) 
+      }else if(input$plot_dist_type == 'violin'){
+        dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
+      }
+      
+      tooltip.txt <- apply(filt.data()[, 1:n.factors()], 1, function(x){
+        paste(str_c(colnames(filt.data())[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
+      })
+      
+      dplot$data$Info <- tooltip.txt
+      if(length(hl.pIDs()) == 0){
+        dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info))
+      }else{
+        dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
+        dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
+      }
+    
+      
+    }else if(input$plot_data == 'animal'){
+      
+      
+      a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      
+      tooltip.txt <- apply(a.hi.data[, 1:length(input$avg)], 1, function(x){
+        paste(str_c(colnames(a.hi.data)[1:length(input$avg)], ': ', as.character(x), '<br>'), sep = '', collapse = '')
+      })
+      
+      dplot <- ggplot(a.hi.data, aes_string(x = as.name(x.var), y = as.name(y.var))) + theme_bw()
+      dplot$data$Info <- tooltip.txt
+      
+
+      if(input$plot_dist_type == 'box'){
+        dplot <- dplot + geom_boxplot(fill = 'gray87', outlier.alpha = 0) 
+      }else if(input$plot_dist_type == 'violin'){
+        dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
+      }
+
+      dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info))
+    }
+    dplot <- addFaceting(dplot)
+    
+    dplotly <- list(plot = ggplotly(dplot, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = dplot$data)
+    
+    if(input$plot_dist_type == 'box'){
+      nlayers <- length(dplotly$plot$x$data)/3
+      for(i in 1:nlayers){
+        dplotly$plot$x$data[[i]]$marker$opacity = 0
+      }
+    }
+    
+    dplotly
+    
+  })
+  
+  
+  
+  output$dist_plot <- renderPlotly(dist.plot()$plot)
+  
+  ### Histogram
+  
+  hist_plot <- reactive({
+    fill.var <- input$plot_effect %>% as.character()
+    m.var <- input$plot_out_var %>% as.character()
+    
+    if(input$plot_data == 'cell'){
+      hplot <- ggplot(filt.data(), aes_string(x = as.name(m.var), fill = as.name(fill.var))) + theme_bw()
+      
+      if(input$plot_hist_type == 'bars'){
+        hplot <- hplot + geom_histogram(aes(y =..density..), bins = input$plot_hist_bins)
+      }else{
+        hplot <- hplot + geom_density(alpha = 0.7)
+      }
+    }else if(input$plot_data == 'animal'){
+      a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      hplot <- ggplot(a.hi.data, aes_string(x = as.name(m.var), fill = as.name(fill.var))) + theme_bw()
+      
+      if(input$plot_hist_type == 'bars'){
+        hplot <- hplot + geom_histogram(aes(y =..density..), bins = input$plot_hist_bins)
+      }else{
+        hplot <- hplot + geom_density(alpha = 0.7)
+      }
+    }
+    
+    hplot <- addFaceting(hplot)
+    
+    hplotly <- ggplotly(hplot)
+    
+    hplotly
+  })
+  output$hist_plot <- renderPlotly(hist_plot())
+  
+  ### Cumulative
+  
+  cumsum_plot <- reactive({
+    fill.var <- input$plot_effect %>% as.character()
+    m.var <- input$plot_out_var %>% as.character()
+    
+    if(input$plot_data == 'cell'){
+      csplot <- ggplot(filt.data(), aes_string(x = as.name(m.var), colour = as.name(fill.var))) + stat_ecdf(geom = 'smooth') + theme_bw() + theme(text = element_text(size = 16), axis.title.y = element_blank())
+    }else if(input$plot_data == 'animal'){
+      a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      csplot <- ggplot(a.hi.data, aes_string(x = m.var, colour = fill.var)) + stat_ecdf(geom = 'smooth') + theme_bw() + theme(text = element_text(size = 16), axis.title.y = element_blank())
+    }
+    csplot <- addFaceting(csplot)
+    
+    csplot
+  })
+  
+  output$cumsum_plot <- renderPlot(cumsum_plot())
+  
+  # Correlation heatmaps
+  
+  output$corr_factor <- renderUI(
+   selectInput(inputId = 'corr_factor', choices = c('All data' = 'None', colnames(property.data())[2:n.factors()]), label = 'Select effect:', selected = 'None')
+  )
+  
+  output$corr_factor.p <- renderUI(
+    selectInput(inputId = 'corr_factor.p', choices = c('All data' = 'None', colnames(property.data())[2:n.factors()]), label = 'Select effect:', selected = 'None')
+  )
+  
+
+  corr_levels <- reactive({
+    lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
+    lvls
+  })
+  
+  output$corr_levels <- renderUI(
+    selectInput(inputId = 'corr_levels', choices = corr_levels(), label = 'Select level:')
+  )
+  
+  corr_levels.p <- reactive({
+    lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
+    lvls
+  })
+  
+  output$corr_levels.p1 <- renderUI(
+    selectInput(inputId = 'corr_levels.p1', choices = corr_levels.p(), label = 'Select level:')
+  )
+  output$corr_levels.p2 <- renderUI(
+    selectInput(inputId = 'corr_levels.p2', choices = corr_levels.p(), label = 'Select level:')
+  )
+  
+  hm.plot <- reactive({
+    hm.data <- filt.data()
+    
+    if(input$corr_factor != 'None'){
+      hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }else{
+      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }
+    
+    corrfun <- function(x, y){
+      m <- hm.data[,c(x, y)] %>% na.omit
+      r <- cor(m[, 1], m[, 2])
+      return(r)
+    }
+    corr.data <- outer(colnames(hm.data), colnames(hm.data), Vectorize(corrfun))
+    colnames(corr.data) <- colnames(hm.data)
+    rownames(corr.data) <- colnames(hm.data)
+    
+    if(input$corr_factor != 'None'){
+      ttl = str_c(input$corr_factor, ' ', input$corr_levels)
+    }else{
+      ttl <- 'All data'
+    }
+
+    if('clustered' %in% input$corr_opts){
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl)
+    }else{
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, cluster_rows = F, cluster_cols = F)
+    }
+  })
+  
+  output$corr_plot <- renderPlot(hm.plot())
+  
+  hm.plot.p1 <- reactive({
+    hm.data <- filt.data()
+
+    if(input$corr_factor.p != 'None'){
+      hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p1, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }else{
+      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }
+    
+    corrfun <- function(x, y){
+      m <- hm.data[,c(x, y)] %>% na.omit
+      r <- cor(m[, 1], m[, 2])
+      return(r)
+    }
+    corr.data <- outer(colnames(hm.data), colnames(hm.data), Vectorize(corrfun))
+    colnames(corr.data) <- colnames(hm.data)
+    rownames(corr.data) <- colnames(hm.data)
+    
+    if(input$corr_factor.p != 'None'){
+      ttl1 <- str_c(input$corr_factor.p, ' ', input$corr_levels.p1)
+      ttl2 <- str_c(input$corr_factor.p, ' ', input$corr_levels.p2)
+    }else{
+      ttl1 <- 'All data'
+      ttl2 <- 'All data'
+    }
+    
+    if('clustered' %in% input$corr_opts){
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1)
+    }else{
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F)
+    }
+  })
+  
+  output$corr_plot.p1 <- renderPlot(hm.plot.p1())
+  
+  hm.plot.p2 <- reactive({
+    hm.data <- filt.data()
+
+    if(input$corr_factor.p != 'None'){
+    hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }else{
+      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    }
+    
+    if(input$corr_factor.p != 'None'){
+      ttl1 <- str_c(input$corr_factor.p, ' ', input$corr_levels.p1)
+      ttl2 <- str_c(input$corr_factor.p, ' ', input$corr_levels.p2)
+    }else{
+      ttl1 <- 'All data'
+      ttl2 <- 'All data'
+    }
+    
+    corrfun <- function(x, y){
+      m <- hm.data[,c(x, y)] %>% na.omit
+      r <- cor(m[, 1], m[, 2])
+      return(r)
+    }
+    corr.data <- outer(colnames(hm.data), colnames(hm.data), Vectorize(corrfun))
+    colnames(corr.data) <- colnames(hm.data)
+    rownames(corr.data) <- colnames(hm.data)
+    
+    if('clustered' %in% input$corr_opts){
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2)
+    }else{
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F)
+    }
+  })
+  
+  output$corr_plot.p2 <- renderPlot(hm.plot.p2())
+  
+  ## Downloads table
+  
+  factor_input <- reactive({
+    colnames(filt.data())[1:(n.factors())]
+  })
+  
+  variable_input <- reactive({
+    colnames(filt.data())[(n.factors()+1):ncol(filt.data())]
+  })
+  
+  output$factor_select <- renderUI(multiInput(inputId = 'factor_select', 'Select factors:', choices = factor_input(), width = '600px', selected = factor_input()[1:3], options = list(enable_search = F)))
+  output$variable_select <- renderUI(multiInput(inputId = 'variable_select', 'Select variables:', choices = variable_input(), width = '600px', selected = variable_input()[1], options = list(enable_search = F)))
+  
+  down.table <- reactive({
+    filt.data() %>% select(c(input$factor_select, input$variable_select))
+  })
+  
+  output$downloadData <- downloadHandler(filename = 'ephys_download.xlsx', content = function(file){
+    d <- down.table()
+    WriteXLS::WriteXLS(x = d, ExcelFileName = file, AdjWidth = T, FreezeRow = 1)
+  })
+  
+  output$downloadDataCSV <- downloadHandler(filename = 'ephys_download.csv', content = function(file){
+    d <- down.table()
+    write.csv(d, file = file, quote = F, col.names = T, row.names = F)
+  })
+  
+  output$down.table <- DT::renderDataTable(down.table(), server = T, filter = 'top', escape = F, selection = 'none', rownames = F)
+  
+})
+
+
+
