@@ -1,0 +1,11 @@
+{"Title": "LAB-AID",
+ "About": "Laboratory-assisted interrogation of data: An interactive application for the visualisation and analysis of experimental properties.",
+ "Datasets": [
+    {
+      "Name": "Booker",
+      "Path": "data/booker2019.xlsx",
+      "n.Factors": 8,
+      "Description": "Dataset from 'Altered dendritic spine function and integration in a mouse model of Fragile X Syndrome', Booker 2019, Nature Communications."
+    }
+  ]
+}
