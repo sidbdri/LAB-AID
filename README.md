@@ -11,8 +11,7 @@ LAB-AID is configured through the config.json file. The file has the following s
 1. Title - application title. 
 2. About - application and/or dataset description.
 3. Datasets - entries for each datasets. These entries are required for every dataset used.
-*1. Name - name of the dataset.
-*2. Path - path to the dataset .xlsx or .csv file.
-*4. nFactors - number of experimental factors.
-*5. Description - descripton of the dataset.
-
+  1. Name - name of the dataset.
+  2. Path - path to the dataset .xlsx or .csv file.
+  4. nFactors - number of experimental factors.
+  5. Description - descripton of the dataset.
