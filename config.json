@@ -3,9 +3,9 @@
  "Datasets": [
     {
       "Name": "Booker",
-      "Path": "data/booker2019.xlsx",
+      "Path": "data/example_data.xlsx",
       "n.Factors": 8,
-      "Description": "A data set from the paper 'Altered dendritic spine function and integration in a mouse model of Fragile X Syndrome', Booker et al., Nature Communications (2019)."
+      "Description": "Example experimental data in which the morphology, function and integration of dendritic spines was studied in layer 4 spiny-stellate cells from the somatosensory cortex of a mouse model of a monogenic neurodevelopmental disorder, and compared with the behaviour of neurons of wild-type mice."
     }
   ]
 }
