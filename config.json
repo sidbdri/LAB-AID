@@ -2,7 +2,7 @@
  "About": "LAB-AID (Laboratory Automated Interrogation of Data): an interactive web application for visualization of multi-level data from biological experiments.",
  "Datasets": [
     {
-      "Name": "Booker",
+      "Name": "Example data",
       "Path": "data/example_data.xlsx",
       "n.Factors": 8,
       "Description": "Example experimental data in which the morphology, function and integration of dendritic spines was studied in layer 4 spiny-stellate cells from the somatosensory cortex of a mouse model of a monogenic neurodevelopmental disorder, and compared with the behaviour of neurons of wild-type mice."
