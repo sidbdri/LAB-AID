@@ -11,6 +11,8 @@ A key step in understanding the results of biological experiments is visualizati
 * help to determine which statistical tests should be performed
 * easily identify outliers and sources of batch effects
 
+For more details, please see [our preprint](https://www.biorxiv.org/content/10.1101/763318v1).
+
 ## Implementation
 This is an [R Shiny](https://shiny.rstudio.com/) application and it can be run through [R Studio](https://www.rstudio.com/) locally or hosted via [Shiny Server](https://www.rstudio.com/products/shiny/shiny-server/). It is also possible to deploy the application to [shinyapps.io](https://www.shinyapps.io/). 
 Please refer to the [R Shiny documenation](https://www.rdocumentation.org/packages/shiny/versions/1.3.2) on how to deploy Shiny applications.
