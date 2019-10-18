@@ -13,15 +13,10 @@ library(jsonlite)
 
 
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   datasets <- jsonlite::fromJSON(txt = 'config.json')$Datasets
-  
-  # Dataset selector UI element
-  output$data.select <- renderUI({
-    selectInput(inputId = 'dataset', label = 'Dataset:', choices = datasets$Name, selected = datasets$Name[1])
-  })
-  
+
   # Loading selected dataset
   property.data <- reactive({
     fpath <- datasets %>% filter(Name == input$dataset) %>% pull(Path)
@@ -52,7 +47,7 @@ shinyServer(function(input, output) {
   })
   output$avg.select <- avg.select
   
-# Data selection (originally called 'Exclusions', hence the variable names.)
+# Exclusions
   observeEvent(input$dataset,{
    nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors) +1
    lapply(1:nf, function(x){
@@ -86,6 +81,7 @@ shinyServer(function(input, output) {
     nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors) +1
     lapply(1:nf, function(x){
       cname <- reactive({colnames(property.data())[x]})
+      #choices <- reactive({(property.data()[, x] %>% as.character %>% unique %>% sort)})
       if(x == 1){
         choices <- reactive({(property.data()[, x] %>% as.character %>% as.numeric %>% unique %>% sort %>% trunc)})
       }else{
@@ -108,13 +104,32 @@ shinyServer(function(input, output) {
     })
   })
   
-  ## Functions for data filtering and highlights
+  ## Functions for exclusions and highlights
+  removeExclusions <- function(df){
+    for(i in 1:18){
+      df <- df %>% filter_at(i, all_vars((. %in% input[[paste0('exclusions.', colnames(property.data())[i])]])))
+    }
+    return(df)
+  }
+  
   filterData <- function(dfr){
     index <- rep(T, nrow(dfr))
     for(i in 1:n.factors()){
+      #df <- df %>% filter_at(i, all_vars((. %in% input[[paste0('exclusions.', colnames(property.data())[i])]])))
+      
       index <- index & (((dfr %>% pull(i)) %in% input[[paste0('exclusions.', colnames(property.data())[i])]]) | is.na(dfr %>% pull(i)))
     }
+    #index <- as.logical(index)
     dfr <- dfr[index, ] %>% mutate(pID = as.integer(pID))
+    return(dfr)
+  }
+  
+  addHighlights <- function(dfr){
+    h_vec <- rep(F, nrow(dfr))
+    for(i in 1:n.factors()){
+      h_vec <- h_vec | ((dfr %>% pull(i)) %in% input[[paste0('h_',i)]])
+    }
+    dfr <- dfr %>% mutate(highlight = h_vec)
     return(dfr)
   }
   
@@ -122,8 +137,10 @@ shinyServer(function(input, output) {
   prev.factors <- reactive({colnames(property.data())[2:n.factors()]})
   output$prev.factors <- renderUI(selectInput('prev.factors', 'Select main effect:', choices = prev.factors(), selected = 'Genotype'))
   
+  #filt.data <- reactive({removeExclusions(property.data())})
   filt.data <- reactive({filterData(property.data())})
-
+  #hi.data <- reactive({addHighlights(filt.data())})
+  
   output$test.table <- renderTable(filt.data())
   
   hl.pIDs <- reactive({
@@ -135,7 +152,10 @@ shinyServer(function(input, output) {
   })
   
 
-  out.vars <- reactive({colnames(property.data())[(n.factors() +1):ncol(property.data())]})
+#  output$pIDs <- renderText(hl.pIDs())
+#  output$animals <- renderText(hl.animals())
+  
+  out.vars <- reactive({colnames(property.data())[(n.factors() +1):ncol(property.data())]}) ### HARDCODED
   
   
   ###Preview plot
@@ -158,6 +178,13 @@ shinyServer(function(input, output) {
     pl <- pl + geom_jitter(width = 0.2, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
+    
+    #if(input$prev.type == 'box'){
+    #  nvars <- prev.table %>% pull(variable) %>% unique %>% length
+    #  for(i in 1:nvars){
+    #    ply$plot$x$data[[i]]$marker$opacity = 0
+    #  }
+    #}
     
     ply
   })
@@ -213,6 +240,7 @@ shinyServer(function(input, output) {
     
     if(input$plot_data == 'cell'){
       
+      #dplot <- ggplot(filt.data(), aes_string(x = as.name(x.var), y = as.name(y.var))) + theme_bw()
       dplot <- ggplot(filt.data(), aes_string(x = x.var, y = y.var)) + theme_bw()
       
       if(input$plot_dist_type == 'box'){
@@ -347,7 +375,11 @@ shinyServer(function(input, output) {
   )
   
   corr_levels.p <- reactive({
-    lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
+    if('exclusions' %in% input$corr_opts){
+      lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
+    }else{
+      lvls <- property.data() %>% pull(input$corr_factor.p) %>% unique
+    }
     lvls
   })
   
@@ -359,7 +391,7 @@ shinyServer(function(input, output) {
   )
   
   hm.plot <- reactive({
-    hm.data <- filt.data()
+    hm.data <- property.data()
     
     if(input$corr_factor != 'None'){
       hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
@@ -427,7 +459,7 @@ shinyServer(function(input, output) {
   output$corr_plot.p1 <- renderPlot(hm.plot.p1())
   
   hm.plot.p2 <- reactive({
-    hm.data <- filt.data()
+    hm.data <- property.data()
 
     if(input$corr_factor.p != 'None'){
     hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
@@ -489,6 +521,49 @@ shinyServer(function(input, output) {
   })
   
   output$down.table <- DT::renderDataTable(down.table(), server = T, filter = 'top', escape = F, selection = 'none', rownames = F)
+  
+  ### Configuration
+  config <- jsonlite::fromJSON(txt = 'config.json')
+  
+  ## App title and description
+  observeEvent(input$app_save, {
+    if(config$Title != input$app_name){
+      config$Title <- input$app_name
+    }
+    if(config$About != input$app_desc){
+      config$About <- input$app_desc
+    }
+    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+    config <<- config
+    sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Okay', type = 'success')
+  })
+  
+  ##Remove dataset
+  output$remove_ds_ui <- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name, multiple = F))
+  observeEvent(input$ds_remove, {
+    config$Datasets <- config$Datasets %>% filter(Name != input$rm_select)
+    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+    output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name, multiple = F))
+    config <<- config
+    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Okay', type = 'success')
+  })
+  
+  ##Add dataset
+  observeEvent(input$ds_submit, {
+    ds_fname <- input$add_file$name
+    file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
+    config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
+    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+    output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
+    config <<- config
+    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Okay', type = 'success')
+  })
   
 })
 

@@ -9,15 +9,18 @@ library(shinyWidgets)
 library(readxl)
 library(jsonlite)
 
+useSweetAlert()
+
 shinyUI(fluidPage(
-  # The following line removes error messages when plots are being loaded. Can be commented out for debugging.
+  
   tags$style(type="text/css", ".shiny-output-error { visibility: hidden; }", ".shiny-output-error:before { visibility: hidden; }"),
   useShinyjs(),
-  navbarPage(jsonlite::fromJSON(txt = 'config.json')$Title,
+  navbarPage(title = jsonlite::fromJSON(txt = 'config.json')$Title,
              tabPanel('Data Select',
                       fluidRow(
                         column(4, # Dataset selection
-                               uiOutput('data.select')
+                               #uiOutput('data.select')
+                               selectInput(inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
                               ),
                         column(4,
                                uiOutput('avg.select')
@@ -65,7 +68,7 @@ shinyUI(fluidPage(
              tabPanel('Data Plots',
                       sidebarLayout(
                         sidebarPanel(width = 3,
-                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual point' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
+                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual cell' = 'cell', 'Animal mean' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
@@ -128,6 +131,31 @@ shinyUI(fluidPage(
                           DT::dataTableOutput('down.table')
                         )
                       )),
+             tabPanel('Configuration',
+                      h1('Dataset management'),
+                      fluidRow(
+                        column(width = 6,
+                          h2('Add dataset'),
+                          fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
+                          textInput(inputId = 'ds_name', 'Dataset name:'),
+                          textInput(inputId = 'ds_factors', 'Number of factors:'),
+                          textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
+                          actionButton(inputId = 'ds_submit', 'Submit')
+                        ),
+                        column(width = 6,
+                          h2('Remove dataset'),
+                          selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
+                          actionButton(inputId = 'ds_remove', 'Remove')
+                        )
+                      ),
+                      hr(),
+                      h1('Configuration'),
+                      textInput(inputId = 'app_name', 'Application title:', value = jsonlite::fromJSON(txt = 'config.json')$Title),
+                      textAreaInput(inputId = 'app_desc', 'Description:', rows = 3, value = jsonlite::fromJSON(txt = 'config.json')$About),
+                      helpText('Application restart required for configuration changes to take effect.'),
+                      actionButton(inputId = 'app_save', label = 'Save'),
+                      hr()
+                      ),
              tabPanel('About',
                       h1('About'),
                       p(jsonlite::fromJSON(txt = 'config.json')$About), br(),
