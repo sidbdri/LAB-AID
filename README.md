@@ -29,7 +29,7 @@ Make sure your R session has all the required packages installed. See below for 
 If you have access to a Shiny Server, all that is required is to download the repository into directory containing Shiny applications. Make sure the R version the Shiny Server is using has all the required packages installed, and the Shiny Server has sufficient privileges to read and write files within the application directory.
 
 ### Installation via ShinyApps.io
-You can use [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. It is required to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy S.
+You can use [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. It is required to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications.
 
 ## Configuration
 LAB-AID is configured through the config.json file. The file has the following structure:
