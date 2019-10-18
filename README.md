@@ -13,22 +13,38 @@ A key step in understanding the results of biological experiments is visualizati
 
 For more details, please see [our preprint](https://www.biorxiv.org/content/10.1101/763318v1).
 
-## Implementation
+## Installation
 This is an [R Shiny](https://shiny.rstudio.com/) application and it can be run through [R Studio](https://www.rstudio.com/) locally or hosted via [Shiny Server](https://www.rstudio.com/products/shiny/shiny-server/). It is also possible to deploy the application to [shinyapps.io](https://www.shinyapps.io/). 
-Please refer to the [R Shiny documenation](https://www.rdocumentation.org/packages/shiny/versions/1.3.2) on how to deploy Shiny applications.
+
+### Local installation via RStudio
+The application can be run on your computer locally via RStudio. Simply download all files from the repository and execute the following command in RStudio, replacing PATH with the path to the folder the files have been saved in.
+```
+shiny::runApp(appDir = 'PATH')
+```
+Alternatively, you can open scripts ui.R or server.R (or both) in RStudio, and press the 'Run App' button in the top right corner.
+
+Make sure your R session has all the required packages installed. See below for the full list of required packages.
+
+### Installation via Shiny Server
+If you have access to a Shiny Server, all that is required is to download the repository into directory containing Shiny applications. Make sure the R version the Shiny Server is using has all the required packages installed, and the Shiny Server has sufficient privileges to read and write files within the application directory.
+
+### Installation via ShinyApps.io
+You can use [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. It is required to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy S.
 
 ## Configuration
 LAB-AID is configured through the config.json file. The file has the following structure:
 
 - Title - application title. 
-- About - application and/or dataset description.
-- Datasets - entries for each dataset (an entry is required for every dataset used).
-  - Name - name of the dataset.
-  - Path - path to the dataset .xlsx or .csv file.
+- About - application and/or data set description.
+- Data sets - entries for each data set (an entry is required for every data set used).
+  - Name - name of the data set.
+  - Path - path to the data set .xlsx or .csv file.
   - nFactors - number of experimental factors.
-  - Description - descripton of the dataset.
+  - Description - descripton of the data set.
 
-All entries can be modified to the user's liking and requirements, but the JSON structure must be adhered to. Please refer to the [JSON](https://www.json.org/) documentation.
+Data sets can be added and/or removed via the 'Configuration' tab within the application. When adding new data sets, it is mandatory to fill in the 'Dataset name', 'Number of factors' and 'Description' fields.
+
+Alternatively, entries can be modified to the user's liking and requirements, but the JSON structure must be adhered to. Please refer to the [JSON](https://www.json.org/) documentation.
 
 ## Input file structure
 Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (.csv) files. Tables have to be in long format, with experimental factor columns first, followed by columns containing measured variables.
