@@ -68,7 +68,7 @@ shinyUI(fluidPage(
              tabPanel('Data Plots',
                       sidebarLayout(
                         sidebarPanel(width = 3,
-                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual cell' = 'cell', 'Animal mean' = 'animal'), selected = 'cell'),
+                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual point' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
