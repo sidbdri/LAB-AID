@@ -61,14 +61,19 @@ shinyUI(fluidPage(
                                    radioButtons('prev.type', label = 'Plot type:', choices = list('Boxplot' = 'box', 'Violin plot' = 'violin'), inline = T),
                                    helpText('Note: Preview plots may take a while to load.'),
                                    plotlyOutput('prev.plot', height = '800px')
-                                   )
+                                   ),
+                          tabPanel('Summary', 
+                                   radioButtons('statsumType', label = 'Show:', inline = T, choices = list('Factors' = 'factors', 'Variables' = 'variables')),
+                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors')),
+                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables'))
+                          )
                         )
                       )
                       ),
              tabPanel('Data Plots',
                       sidebarLayout(
                         sidebarPanel(width = 3,
-                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual point' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
+                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual cell' = 'cell', 'Animal mean' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),

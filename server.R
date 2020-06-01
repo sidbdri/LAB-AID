@@ -10,6 +10,7 @@ library(shinyWidgets)
 library(WriteXLS)
 library(reshape2)
 library(jsonlite)
+library(summarytools)
 
 
 
@@ -190,6 +191,16 @@ shinyServer(function(input, output, session) {
   })
   
   output$prev.plot <- renderPlotly(prev.plot()$plot)
+  
+  ### Stat summary
+  output$statsumFactors <- renderUI({
+    statsum <- print(dfSummary(filt.data() %>% select_at(2:n.factors())), headings = F, method = 'render', bootstrap.css = T)
+    statsum
+  })
+  output$statsumVariables <- renderUI({
+    statsum <- print(dfSummary(filt.data() %>% select_at((n.factors() + 1):ncol(filt.data()))), headings = F, method = 'render', bootstrap.css = T)
+    statsum
+  })
   
   
   
@@ -535,7 +546,7 @@ shinyServer(function(input, output, session) {
     }
     config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
     config <<- config
-    sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Confirm', type = 'success')
   })
   
   ##Remove dataset
@@ -548,7 +559,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
   })
   
   ##Add dataset
@@ -562,7 +573,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
   })
   
 })
