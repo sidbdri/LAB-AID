@@ -62,3 +62,4 @@ Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (
 - [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)
 - [plotly](https://cran.r-project.org/web/packages/plotly/index.html)
 - [WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)
+- [summarytools](https://cran.r-project.org/web/packages/summarytools/index.html)
