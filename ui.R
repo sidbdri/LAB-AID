@@ -132,28 +132,31 @@ shinyUI(fluidPage(
                         )
                       )),
              tabPanel('Configuration',
-                      h1('Dataset management'),
+                      h1('Dataset management'), helpText('Configuration options are disabled in the demonstration version.'),
                       fluidRow(
                         column(width = 6,
                           h2('Add dataset'),
+                          disabled(
                           fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
                           textInput(inputId = 'ds_name', 'Dataset name:'),
                           textInput(inputId = 'ds_factors', 'Number of factors:'),
                           textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
-                          actionButton(inputId = 'ds_submit', 'Submit')
+                          actionButton(inputId = 'ds_submit', 'Submit'))
                         ),
                         column(width = 6,
                           h2('Remove dataset'),
+                          disabled(
                           selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
-                          actionButton(inputId = 'ds_remove', 'Remove')
+                          actionButton(inputId = 'ds_remove', 'Remove'))
                         )
                       ),
                       hr(),
                       h1('Configuration'),
+                      disabled(
                       textInput(inputId = 'app_name', 'Application title:', value = jsonlite::fromJSON(txt = 'config.json')$Title),
                       textAreaInput(inputId = 'app_desc', 'Description:', rows = 3, value = jsonlite::fromJSON(txt = 'config.json')$About),
                       helpText('Application restart required for configuration changes to take effect.'),
-                      actionButton(inputId = 'app_save', label = 'Save'),
+                      actionButton(inputId = 'app_save', label = 'Save')),
                       hr()
                       ),
              tabPanel('About',
