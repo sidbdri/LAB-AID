@@ -10,12 +10,14 @@ library(shinyWidgets)
 library(WriteXLS)
 library(reshape2)
 library(jsonlite)
+library(summarytools)
 
 
 
 shinyServer(function(input, output, session) {
   
   datasets <- jsonlite::fromJSON(txt = 'config.json')$Datasets
+  
 
   # Loading selected dataset
   property.data <- reactive({
@@ -30,6 +32,10 @@ shinyServer(function(input, output, session) {
     d <- cbind(pID = (1:nrow(d)) + 1, d) # Adds pID column starting at 2
     d <- d %>% select(-c(which(colSums(is.na(d)) == nrow(d)))) # Removes all NA columns
     d <- d %>% mutate_at((1:nf) + 1, as.factor)
+  })
+  
+  observeEvent(input$dataset,{
+    updateTabsetPanel(session, inputId = 'viewTabs', selected = 'Selection')
   })
   
 # Number of factors 
@@ -159,7 +165,7 @@ shinyServer(function(input, output, session) {
   
   
   ###Preview plot
-  prev.facs <- reactive({input$prev.factors})
+  prev.facs <- reactive({str_c('`', input$prev.factors, '`')})
   prev.plot <- reactive({
     prev.table <- melt(filt.data(), id.vars = colnames(filt.data()[1:n.factors()]))
     pl <- ggplot(prev.table, aes_string(x = prev.facs(), y = 'value')) + facet_wrap(~variable, scales = 'free') + theme_bw()
@@ -191,32 +197,47 @@ shinyServer(function(input, output, session) {
   
   output$prev.plot <- renderPlotly(prev.plot()$plot)
   
+  ### Stat summary
+  output$statsumFactors <- renderUI({
+    statsum <- print(dfSummary(filt.data() %>% select_at(2:n.factors())), headings = F, method = 'render', bootstrap.css = T)
+    statsum
+  })
+  output$statsumVariables <- renderUI({
+    statsum <- print(dfSummary(filt.data() %>% select_at((n.factors() + 1):ncol(filt.data()))), headings = F, method = 'render', bootstrap.css = T)
+    statsum
+  })
+  
   
   
   ### Main plot UI elements
-  plot_out_var <-  renderUI({
-    choice <- reactive({out.vars()})
-    selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice())
-  })
-  output$plot_out_var <- plot_out_var
-  
-  plot_effect <- renderUI({
+  observeEvent(input$dataset,
+    {
+    
+    plot_out_var <-  renderUI({
+      choice <- reactive({out.vars()})
+      selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice())
+    })
+    output$plot_out_var <- plot_out_var
+    
+    plot_effect <- renderUI({
       choice <- reactive({colnames(property.data())[2:n.factors()]})
       selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice())
-  })
-  output$plot_effect <- plot_effect
-  
-  plot_x <- renderUI({
+    })
+    output$plot_effect <- plot_effect
+    
+    plot_x <- renderUI({
       choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
       selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice())
-  })
-  output$plot_x <- plot_x
-  
-  plot_y <- renderUI({
+    })
+    output$plot_x <- plot_x
+    
+    plot_y <- renderUI({
       choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
       selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice())
+    })
+    output$plot_y <- plot_y
   })
-  output$plot_y <- plot_y
+  
   
   addFaceting <- function(pl){
     if(input$plot_x != 'None' & input$plot_y == 'None'){
@@ -235,8 +256,8 @@ shinyServer(function(input, output, session) {
   ### Distribution plot
   
   dist.plot <- reactive({
-    x.var <- input$plot_effect %>% as.character
-    y.var <- input$plot_out_var %>% as.character
+    x.var <- str_c('`', input$plot_effect %>% as.character, '`')
+    y.var <- str_c('`', input$plot_out_var %>% as.character, '`')
     
     if(input$plot_data == 'cell'){
       
@@ -271,7 +292,7 @@ shinyServer(function(input, output, session) {
         paste(str_c(colnames(a.hi.data)[1:length(input$avg)], ': ', as.character(x), '<br>'), sep = '', collapse = '')
       })
       
-      dplot <- ggplot(a.hi.data, aes_string(x = as.name(x.var), y = as.name(y.var))) + theme_bw()
+      dplot <- ggplot(a.hi.data, aes_string(x = x.var, y = y.var)) + theme_bw()
       dplot$data$Info <- tooltip.txt
       
 
@@ -305,6 +326,7 @@ shinyServer(function(input, output, session) {
   ### Histogram
   
   hist_plot <- reactive({
+
     fill.var <- input$plot_effect %>% as.character()
     m.var <- input$plot_out_var %>% as.character()
     
@@ -535,7 +557,7 @@ shinyServer(function(input, output, session) {
     }
     config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
     config <<- config
-    sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Confirm', type = 'success')
   })
   
   ##Remove dataset
@@ -548,7 +570,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
   })
   
   ##Add dataset
@@ -562,7 +584,7 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Okay', type = 'success')
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
   })
   
 })

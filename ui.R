@@ -27,7 +27,7 @@ shinyUI(fluidPage(
                               )
                       ),
                       fluidRow(
-                        tabsetPanel(type = 'tabs', 
+                        tabsetPanel(type = 'tabs', id = 'viewTabs',
                                     tabPanel('Selection', br(), br(),
                                              fluidRow(
                                                column(4,
@@ -61,14 +61,19 @@ shinyUI(fluidPage(
                                    radioButtons('prev.type', label = 'Plot type:', choices = list('Boxplot' = 'box', 'Violin plot' = 'violin'), inline = T),
                                    helpText('Note: Preview plots may take a while to load.'),
                                    plotlyOutput('prev.plot', height = '800px')
-                                   )
+                                   ),
+                          tabPanel('Summary', 
+                                   radioButtons('statsumType', label = 'Show:', inline = T, choices = list('Factors' = 'factors', 'Variables' = 'variables')),
+                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors')),
+                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables'))
+                          )
                         )
                       )
                       ),
              tabPanel('Data Plots',
                       sidebarLayout(
                         sidebarPanel(width = 3,
-                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual point' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
+                                     radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual points' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
@@ -135,30 +140,30 @@ shinyUI(fluidPage(
                       h1('Dataset management'), helpText('Configuration options are disabled in the demonstration version.'),
                       fluidRow(
                         column(width = 6,
-                          h2('Add dataset'),
-                          disabled(
-                          fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
-                          textInput(inputId = 'ds_name', 'Dataset name:'),
-                          textInput(inputId = 'ds_factors', 'Number of factors:'),
-                          textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
-                          actionButton(inputId = 'ds_submit', 'Submit'))
+                               h2('Add dataset'),
+                               disabled(
+                                 fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
+                                 textInput(inputId = 'ds_name', 'Dataset name:'),
+                                 textInput(inputId = 'ds_factors', 'Number of factors:'),
+                                 textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
+                                 actionButton(inputId = 'ds_submit', 'Submit'))
                         ),
                         column(width = 6,
-                          h2('Remove dataset'),
-                          disabled(
-                          selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
-                          actionButton(inputId = 'ds_remove', 'Remove'))
+                               h2('Remove dataset'),
+                               disabled(
+                                 selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
+                                 actionButton(inputId = 'ds_remove', 'Remove'))
                         )
                       ),
                       hr(),
                       h1('Configuration'),
                       disabled(
-                      textInput(inputId = 'app_name', 'Application title:', value = jsonlite::fromJSON(txt = 'config.json')$Title),
-                      textAreaInput(inputId = 'app_desc', 'Description:', rows = 3, value = jsonlite::fromJSON(txt = 'config.json')$About),
-                      helpText('Application restart required for configuration changes to take effect.'),
-                      actionButton(inputId = 'app_save', label = 'Save')),
+                        textInput(inputId = 'app_name', 'Application title:', value = jsonlite::fromJSON(txt = 'config.json')$Title),
+                        textAreaInput(inputId = 'app_desc', 'Description:', rows = 3, value = jsonlite::fromJSON(txt = 'config.json')$About),
+                        helpText('Application restart required for configuration changes to take effect.'),
+                        actionButton(inputId = 'app_save', label = 'Save')),
                       hr()
-                      ),
+             ),
              tabPanel('About',
                       h1('About'),
                       p(jsonlite::fromJSON(txt = 'config.json')$About), br(),
