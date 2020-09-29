@@ -63,3 +63,5 @@ Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (
 - [plotly](https://cran.r-project.org/web/packages/plotly/index.html)
 - [WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)
 - [summarytools](https://cran.r-project.org/web/packages/summarytools/index.html)
+- [lme4](https://cran.r-project.org/web/packages/lme4/index.html)
+- [car](https://cran.r-project.org/web/packages/car/index.html)
