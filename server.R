@@ -10,6 +10,8 @@ library(shinyWidgets)
 library(WriteXLS)
 library(reshape2)
 library(jsonlite)
+library(lme4)
+library(car)
 library(summarytools)
 
 
@@ -525,8 +527,8 @@ shinyServer(function(input, output, session) {
     colnames(filt.data())[(n.factors()+1):ncol(filt.data())]
   })
   
-  output$factor_select <- renderUI(multiInput(inputId = 'factor_select', 'Select factors:', choices = factor_input(), width = '600px', selected = factor_input()[1:3], options = list(enable_search = F)))
-  output$variable_select <- renderUI(multiInput(inputId = 'variable_select', 'Select variables:', choices = variable_input(), width = '600px', selected = variable_input()[1], options = list(enable_search = F)))
+  output$factor_select <- renderUI(multiInput(inputId = 'factor_select', 'Select factors:', choices = factor_input()[-1], width = '600px', selected = factor_input(), options = list(enable_search = F)))
+  output$variable_select <- renderUI(multiInput(inputId = 'variable_select', 'Select variables:', choices = variable_input(), width = '600px', selected = variable_input(), options = list(enable_search = F)))
   
   down.table <- reactive({
     filt.data() %>% select(c(input$factor_select, input$variable_select))
@@ -587,6 +589,101 @@ shinyServer(function(input, output, session) {
     sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
   })
   
+  ## Update dataset
+  output$ds_update_select <- renderUI({
+    selectInput(inputId = 'ds_update_name', label = 'Select dataset to update:', choices = datasets$Name, selected = datasets$Name[1], multiple = F)
+  })
+  observeEvent(input$ds_update, {
+    old.file <- config$Datasets %>% filter(Name == input$ds_update_name) %>% pull(Path)
+    new.file <- input$update_file$name
+    file.rename(from = old.file, to = str_c('Archive_', format(Sys.time(), "%a%b%d%Y_%H%M", old.file)))
+    file.copy(from = input$update_file$datapath, to = str_c('data/', new.file))
+    config$Datasets[config$Datasets$Name == input$ds_update_name, 'Path'] <- str_c('data/', new.file)
+    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+    config <<- config
+    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
+  })
+  
+  ## Basic LMM
+  lmm.vars <- reactive({
+    colnames(filt.data())[(n.factors() + 1):ncol(filt.data())]
+  })
+  lmm.factors <- reactive({
+    colnames(filt.data())[1:n.factors()]
+  })
+  output$lmm_vars_select <- renderUI({
+    selectInput(inputId = 'lmm_var', label = 'Select variable:', choices = lmm.vars(), selected = lmm.vars()[1], multiple = F)
+  })
+  output$lmm_factor_select <- renderUI({
+    selectInput(inputId = 'lmm_factor', label = 'Select main factor:', choices = lmm.factors(), selected = lmm.factors()[1], multiple = F)
+  })
+  output$lmm_random_select <- renderUI({
+    multiInput(inputId = 'lmm_random', 'Select random factors:', choices = lmm.factors(), width = '400px', selected = tail(lmm.factors(), 2), options = list(enable_search = F))
+  })
+  lmm.qqp <- reactive({
+    if(input$lmm_logtrans){
+      lmm.variable <- log10((filt.data() %>% pull(input$lmm_var) %>% na.omit ) +1)
+    }else{
+      lmm.variable <- filt.data()%>% pull(input$lmm_var) %>% na.omit 
+    }
+    qqp(lmm.variable, main = input$lmm_var)
+  })
+  output$lmm_qqp <- renderPlot(lmm.qqp())
+  
+  output$log_error <- reactive({
+    cond <- any((filt.data() %>% pull(input$lmm_var)) < 0)
+    return(cond)
+  })
+  output$log_warning <- renderText({
+    paste("WARNING: Variable contains negative values", "Log-transformation will cause errors.", sep="\n")
+  })
+  
+  outputOptions(output, "log_error", suspendWhenHidden = FALSE)
+  
+  lmm.funct <- reactive({
+    if(length(input$lmm_random) > 0){
+      rand.factors <- sapply(input$lmm_random, function(x)str_c("`", x, "`"))
+      rand.factors <- paste(rand.factors, sep = ':', collapse = ':')
+      if(input$lmm_logtrans){
+        form <- str_c("log10(`", input$lmm_var, "`) ~ `", input$lmm_factor, "` + (1|", rand.factors, ")")
+      }else{
+        form <- str_c("`", input$lmm_var, "` ~ `", input$lmm_factor, "` + (1|", rand.factors, ")")
+      }
+      full.lm <- lmer(formula = form, data = filt.data())
+    }else{
+      if(input$lmm_logtrans){
+        form <- str_c("log10(`", input$lmm_var, "`) ~ `", input$lmm_factor, "`")
+      }else{
+        form <- str_c("`", input$lmm_var, "` ~ `", input$lmm_factor, "`")
+      }
+      full.lm <- lm(form, data = filt.data())
+    }
+    full.lm
+  })
+  
+  lmm.sum <- reactive({
+    summary(lmm.funct())
+  })
+  
+  lmm.Anova <- reactive({
+    if(length(input$lmm_random) > 0){
+      lmm.an <- Anova(lmm.funct())
+    }else{
+      lmm.an <- aov(lmm.funct())
+    }
+    lmm.an
+  })
+  
+  rand.text <- reactive({
+    f <- sapply(input$lmm_random, function(x)str_c("`", x, "`"))
+    paste(f, sep = ':', collapse = ':')
+  })
+  output$rand_text <- renderText(input$lmm_random %>% class)
+  output$lmm_summary <- renderPrint(lmm.sum())
+  output$lmm_Anova <- renderPrint(lmm.Anova())
 })
 
 

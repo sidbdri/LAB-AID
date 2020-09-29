@@ -90,6 +90,25 @@ shinyUI(fluidPage(
                         )
                       )
              ),
+             tabPanel('LMM',
+                      fluidPage(
+                        fluidRow(
+                          column(6,
+                                 uiOutput('lmm_vars_select'),
+                                 conditionalPanel(condition = "output.log_error", verbatimTextOutput(outputId = 'log_warning')),
+                                 
+                                 checkboxInput(inputId = 'lmm_logtrans', label = 'Log-transformed', value = F),
+                                 plotOutput('lmm_qqp')),
+                          column(6,
+                                 uiOutput('lmm_factor_select')),
+                          column(6,
+                                 uiOutput('lmm_random_select'))
+                        ),
+                        fluidRow(
+                          verbatimTextOutput('lmm_summary'),
+                          verbatimTextOutput('lmm_Anova')
+                        )
+                      )),
              tabPanel('Correlation',
                       fluidPage(
                         fluidRow(
@@ -148,6 +167,10 @@ shinyUI(fluidPage(
                           actionButton(inputId = 'ds_submit', 'Submit')
                         ),
                         column(width = 6,
+                          h2('Update dataset'),
+                          fileInput(inputId = 'update_file', label = 'Upload updated dataset', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
+                          uiOutput('ds_update_select'),
+                          actionButton(inputId = 'ds_update', 'Update'),
                           h2('Remove dataset'),
                           selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
                           actionButton(inputId = 'ds_remove', 'Remove')
