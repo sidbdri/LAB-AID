@@ -90,7 +90,7 @@ shinyUI(fluidPage(
                         )
                       )
              ),
-             tabPanel('LMM',
+             tabPanel('Modelling',
                       fluidPage(
                         fluidRow(
                           column(6,
