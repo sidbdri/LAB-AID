@@ -183,7 +183,7 @@ shinyServer(function(input, output, session) {
       paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
     })
     
-    pl <- pl + geom_jitter(width = 0.2, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
     
@@ -278,10 +278,10 @@ shinyServer(function(input, output, session) {
       
       dplot$data$Info <- tooltip.txt
       if(length(hl.pIDs()) == 0){
-        dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info))
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
       }else{
         dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
-        dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
       }
     
       
@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
         dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
       }
 
-      dplot <- dplot + geom_jitter(width = 0.2, aes(text = Info))
+      dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
     }
     dplot <- addFaceting(dplot)
     
