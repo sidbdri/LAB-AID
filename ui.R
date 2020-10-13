@@ -106,7 +106,8 @@ shinyUI(fluidPage(
                         ),
                         fluidRow(
                           verbatimTextOutput('lmm_summary'),
-                          verbatimTextOutput('lmm_Anova')
+                          conditionalPanel(condition = "input.lmm_random.length > 0", verbatimTextOutput('lmm_Anova'))
+                          
                         )
                       )),
              tabPanel('Correlation',
