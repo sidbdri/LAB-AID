@@ -90,6 +90,26 @@ shinyUI(fluidPage(
                         )
                       )
              ),
+             tabPanel('Modelling',
+                      fluidPage(
+                        fluidRow(
+                          column(6,
+                                 uiOutput('lmm_vars_select'),
+                                 conditionalPanel(condition = "output.log_error", verbatimTextOutput(outputId = 'log_warning')),
+                                 
+                                 checkboxInput(inputId = 'lmm_logtrans', label = 'Log-transformed', value = F),
+                                 plotOutput('lmm_qqp')),
+                          column(6,
+                                 uiOutput('lmm_factor_select')),
+                          column(6,
+                                 uiOutput('lmm_random_select'))
+                        ),
+                        fluidRow(
+                          verbatimTextOutput('lmm_summary'),
+                          conditionalPanel(condition = "input.lmm_random.length > 0", verbatimTextOutput('lmm_Anova'))
+                          
+                        )
+                      )),
              tabPanel('Correlation',
                       fluidPage(
                         fluidRow(
@@ -140,20 +160,24 @@ shinyUI(fluidPage(
                       h1('Dataset management'), helpText('Configuration options are disabled in the demonstration version.'),
                       fluidRow(
                         column(width = 6,
-                               h2('Add dataset'),
-                               disabled(
-                                 fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
-                                 textInput(inputId = 'ds_name', 'Dataset name:'),
-                                 textInput(inputId = 'ds_factors', 'Number of factors:'),
-                                 textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
-                                 actionButton(inputId = 'ds_submit', 'Submit'))
-                        ),
+                          h2('Add dataset'),
+                          disabled(
+                            fileInput(inputId = 'add_file', label = 'Upload file', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
+                            textInput(inputId = 'ds_name', 'Dataset name:'),
+                            textInput(inputId = 'ds_factors', 'Number of factors:'),
+                            textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
+                            actionButton(inputId = 'ds_submit', 'Submit')
+                        )),
                         column(width = 6,
-                               h2('Remove dataset'),
-                               disabled(
-                                 selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
-                                 actionButton(inputId = 'ds_remove', 'Remove'))
-                        )
+                          h2('Update dataset'),
+                          disabled(
+                            fileInput(inputId = 'update_file', label = 'Upload updated dataset', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
+                            uiOutput('ds_update_select'),
+                            actionButton(inputId = 'ds_update', 'Update'),
+                            h2('Remove dataset'),
+                            selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
+                            actionButton(inputId = 'ds_remove', 'Remove')
+                        ))
                       ),
                       hr(),
                       h1('Configuration'),
@@ -161,9 +185,9 @@ shinyUI(fluidPage(
                         textInput(inputId = 'app_name', 'Application title:', value = jsonlite::fromJSON(txt = 'config.json')$Title),
                         textAreaInput(inputId = 'app_desc', 'Description:', rows = 3, value = jsonlite::fromJSON(txt = 'config.json')$About),
                         helpText('Application restart required for configuration changes to take effect.'),
-                        actionButton(inputId = 'app_save', label = 'Save')),
-                      hr()
-             ),
+                        actionButton(inputId = 'app_save', label = 'Save'),
+                        hr()
+                      )),
              tabPanel('About',
                       h1('About'),
                       p(jsonlite::fromJSON(txt = 'config.json')$About), br(),
