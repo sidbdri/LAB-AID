@@ -278,10 +278,10 @@ shinyServer(function(input, output, session) {
       
       dplot$data$Info <- tooltip.txt
       if(length(hl.pIDs()) == 0){
-        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
       }else{
         dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
-        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl, alpha = input$plot_dist_opacity)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
       }
     
       
@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
         dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
       }
 
-      dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
+      dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
     }
     dplot <- addFaceting(dplot)
     
@@ -516,6 +516,25 @@ shinyServer(function(input, output, session) {
   })
   
   output$corr_plot.p2 <- renderPlot(hm.plot.p2())
+  
+  ## Quick download
+  qDown.table <- reactive({
+    qdt <- filt.data() %>% select(c(input$plot_out_var, input$plot_effect))
+    if(input$plot_x != 'None'){
+      qdt  <- cbind(qdt, filt.data() %>% select(input$plot_x))
+    }
+    if(input$plot_y != 'None'){
+      qdt  <- cbind(qdt, filt.data() %>% select(input$plot_y))
+    }
+    qdt
+  })
+  
+  output$quickDownload <- downloadHandler(filename = 'plotData.xlsx', content = function(file){
+    d <- qDown.table()
+    WriteXLS::WriteXLS(x = d, ExcelFileName = file, AdjWidth = T, FreezeRow = 1)
+  })
+  
+  
   
   ## Downloads table
   

@@ -75,12 +75,14 @@ shinyUI(fluidPage(
                         sidebarPanel(width = 3,
                                      radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual points' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
+                                     conditionalPanel(condition = "input.main_plot_type == 'dist'", sliderInput(inputId = 'plot_dist_opacity', label = 'Point opacity:', value = 1, min = 0, max = 1, step = 0.1)),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
                                      uiOutput('plot_out_var'),
                                      uiOutput('plot_effect'),
                                      uiOutput('plot_x'),
-                                     uiOutput('plot_y')
+                                     uiOutput('plot_y'),
+                                     downloadButton(outputId = 'quickDownload', label = 'Download plot data')
                                      ),
                         mainPanel(
                           radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
