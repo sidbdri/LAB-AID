@@ -241,7 +241,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  addFaceting <- function(pl){
+  addFaceting_backup <- function(pl){
     if(input$plot_x != 'None' & input$plot_y == 'None'){
       form <- str_c('.~', input$plot_x) %>% as.formula
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
@@ -250,6 +250,20 @@ shinyServer(function(input, output, session) {
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
     }else if(input$plot_x != 'None' & input$plot_y != 'None'){
       form <- str_c(input$plot_y, '~', input$plot_x) %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }
+    return(pl)
+  }
+  
+  addFaceting <- function(pl){
+    if(input$plot_x != 'None' & input$plot_y == 'None'){
+      form <- str_c('.~ `', input$plot_x, '`') %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }else if(input$plot_x == 'None' & input$plot_y != 'None'){
+      form <- str_c('`', input$plot_y, '` ~.') %>% as.formula
+      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
+    }else if(input$plot_x != 'None' & input$plot_y != 'None'){
+      form <- str_c('`', input$plot_y, '` ~ `', input$plot_x, '`') %>% as.formula
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
     }
     return(pl)
@@ -583,8 +597,8 @@ shinyServer(function(input, output, session) {
     }
     config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
     config <<- config
-    updateRestart()
     sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ##Remove dataset
@@ -597,8 +611,8 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    updateRestart()
     sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ##Add dataset
@@ -612,8 +626,8 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    updateRestart()
     sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ## Update dataset
@@ -631,8 +645,8 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    updateRestart()
     sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ## Basic LMM
