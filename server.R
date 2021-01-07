@@ -240,21 +240,6 @@ shinyServer(function(input, output, session) {
     output$plot_y <- plot_y
   })
   
-  
-  addFaceting_backup <- function(pl){
-    if(input$plot_x != 'None' & input$plot_y == 'None'){
-      form <- str_c('.~', input$plot_x) %>% as.formula
-      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
-    }else if(input$plot_x == 'None' & input$plot_y != 'None'){
-      form <- str_c(input$plot_y, '~.') %>% as.formula
-      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
-    }else if(input$plot_x != 'None' & input$plot_y != 'None'){
-      form <- str_c(input$plot_y, '~', input$plot_x) %>% as.formula
-      pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
-    }
-    return(pl)
-  }
-  
   addFaceting <- function(pl){
     if(input$plot_x != 'None' & input$plot_y == 'None'){
       form <- str_c('.~ `', input$plot_x, '`') %>% as.formula
@@ -295,7 +280,7 @@ shinyServer(function(input, output, session) {
         dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
       }else{
         dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
-        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl, alpha = input$plot_dist_opacity)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl), alpha = input$plot_dist_opacity) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
       }
     
       
