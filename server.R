@@ -183,7 +183,7 @@ shinyServer(function(input, output, session) {
       paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
     })
     
-    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
     
