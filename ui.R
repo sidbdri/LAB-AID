@@ -11,6 +11,8 @@ library(jsonlite)
 
 useSweetAlert()
 
+source('busyIndicator.R')
+
 shinyUI(fluidPage(
   
   tags$style(type="text/css", ".shiny-output-error { visibility: hidden; }", ".shiny-output-error:before { visibility: hidden; }"),
@@ -167,13 +169,17 @@ shinyUI(fluidPage(
                           textInput(inputId = 'ds_name', 'Dataset name:'),
                           textInput(inputId = 'ds_factors', 'Number of factors:'),
                           textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
-                          actionButton(inputId = 'ds_submit', 'Submit')
+                          withBusyIndicatorUI(
+                            actionButton(inputId = 'ds_submit', 'Submit') 
+                          )
                         ),
                         column(width = 6,
                           h2('Update dataset'),
                           fileInput(inputId = 'update_file', label = 'Upload updated dataset', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
                           uiOutput('ds_update_select'),
-                          actionButton(inputId = 'ds_update', 'Update'),
+                          withBusyIndicatorUI(
+                            actionButton(inputId = 'ds_update', 'Update')
+                          ),
                           h2('Remove dataset'),
                           selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
                           actionButton(inputId = 'ds_remove', 'Remove')

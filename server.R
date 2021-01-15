@@ -14,7 +14,7 @@ library(lme4)
 library(car)
 library(summarytools)
 
-
+source('busyIndicator.R')
 
 shinyServer(function(input, output, session) {
   
@@ -602,17 +602,19 @@ shinyServer(function(input, output, session) {
   
   ##Add dataset
   observeEvent(input$ds_submit, {
-    ds_fname <- input$add_file$name
-    file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
-    config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
-    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-    output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
-    config <<- config
-    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
-    updateRestart()
+    withBusyIndicatorServer('ds_submit',{
+      ds_fname <- input$add_file$name
+      file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
+      config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
+      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+      output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
+      config <<- config
+      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
+      updateRestart()
+    })
   })
   
   ## Update dataset
@@ -620,18 +622,20 @@ shinyServer(function(input, output, session) {
     selectInput(inputId = 'ds_update_name', label = 'Select dataset to update:', choices = datasets$Name, selected = datasets$Name[1], multiple = F)
   })
   observeEvent(input$ds_update, {
-    old.file <- config$Datasets %>% filter(Name == input$ds_update_name) %>% pull(Path)
-    new.file <- input$update_file$name
-    file.rename(from = old.file, to = str_c('Archive_', format(Sys.time(), "%a%b%d%Y_%H%M", old.file)))
-    file.copy(from = input$update_file$datapath, to = str_c('data/', new.file))
-    config$Datasets[config$Datasets$Name == input$ds_update_name, 'Path'] <- str_c('data/', new.file)
-    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-    config <<- config
-    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
-    updateRestart()
+    withBusyIndicatorServer('ds_update', {
+      old.file <- config$Datasets %>% filter(Name == input$ds_update_name) %>% pull(Path)
+      new.file <- input$update_file$name
+      file.rename(from = old.file, to = str_c('Archive_', format(Sys.time(), "%a%b%d%Y_%H%M", old.file)))
+      file.copy(from = input$update_file$datapath, to = str_c('data/', new.file))
+      config$Datasets[config$Datasets$Name == input$ds_update_name, 'Path'] <- str_c('data/', new.file)
+      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+      config <<- config
+      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
+      updateRestart()
+    })
   })
   
   ## Basic LMM
