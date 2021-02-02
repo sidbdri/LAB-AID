@@ -389,8 +389,12 @@ shinyServer(function(input, output, session) {
   
 
   corr_levels <- reactive({
-    req(input$corr_factor)
-    lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
+    #if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
+      lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
+    }else{
+      lvls <- 'All data'
+    }
     lvls
   })
   
@@ -399,11 +403,10 @@ shinyServer(function(input, output, session) {
   )
   
   corr_levels.p <- reactive({
-    req(input$corr_factor.p)
-    if('exclusions' %in% input$corr_opts){
+    if(input$corr_factor.p != 'None'){
       lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
     }else{
-      lvls <- property.data() %>% pull(input$corr_factor.p) %>% unique
+      lvls <- 'All data'
     }
     lvls
   })
@@ -416,10 +419,9 @@ shinyServer(function(input, output, session) {
   )
   
   hm.plot <- reactive({
-    req(input$corr_factor, input$corr_levels)
     hm.data <- property.data()
     
-    if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
       hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
       hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
@@ -434,7 +436,7 @@ shinyServer(function(input, output, session) {
     colnames(corr.data) <- colnames(hm.data)
     rownames(corr.data) <- colnames(hm.data)
     
-    if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
       ttl = str_c(input$corr_factor, ' ', input$corr_levels)
     }else{
       ttl <- 'All data'

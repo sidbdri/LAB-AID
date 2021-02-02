@@ -124,7 +124,8 @@ shinyUI(fluidPage(
                                              sidebarLayout(
                                                sidebarPanel(
                                                  uiOutput('corr_factor'),
-                                                 uiOutput('corr_levels')
+                                                 conditionalPanel(condition = "input.corr_factor != 'None'", uiOutput('corr_levels'))
+                                                 #uiOutput('corr_levels')
                                                ),
                                                mainPanel(
                                                  plotOutput('corr_plot', height = '800px')
