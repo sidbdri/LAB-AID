@@ -116,36 +116,42 @@ shinyUI(fluidPage(
                       )),
              tabPanel('Correlation',
                       fluidPage(
-                        fluidRow(
-                          checkboxGroupInput(inputId = 'corr_opts', label = 'Options:', choices = list('Clustered' = 'clustered', 'Pairwise' = 'pairwise'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
-                          ),
-                        conditionalPanel(condition = "input.corr_opts.indexOf('pairwise') == -1",
-                                         sidebarLayout(
-                                           sidebarPanel(
-                                             uiOutput('corr_factor'),
-                                             uiOutput('corr_levels')
-                                           ),
-                                           mainPanel(
-                                             plotOutput('corr_plot', height = '800px')
-                                           )
-                                         )
-                        ),
-                        conditionalPanel(condition = "input.corr_opts.indexOf('pairwise') != -1",
-                                         fluidRow(
-                                           uiOutput('corr_factor.p')
-                                         ),
-                                         fluidRow(
-                                           column(6,
-                                                  uiOutput('corr_levels.p1'),
-                                                  plotOutput('corr_plot.p1', height = '800px')
-                                           ),
-                                           column(6,
-                                                  uiOutput('corr_levels.p2'),
-                                                  plotOutput('corr_plot.p2', height = '800px')
-                                           )
-                                         )
-                        )
-                      )),
+                        tabsetPanel(type = 'pills',
+                                    tabPanel('Condition',
+                                             fluidRow(
+                                               checkboxGroupInput(inputId = 'corr_opts', label = '', choices = list('Clustered' = 'clustered'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
+                                             ),
+                                             sidebarLayout(
+                                               sidebarPanel(
+                                                 uiOutput('corr_factor'),
+                                                 uiOutput('corr_levels')
+                                               ),
+                                               mainPanel(
+                                                 plotOutput('corr_plot', height = '800px')
+                                               )
+                                             )
+                                    ),
+                                    tabPanel('Pairwise',
+                                      fluidRow(
+                                        checkboxGroupInput(inputId = 'corr_opts.p', label = '', choices = list('Clustered' = 'clustered'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
+                                      ),
+                                      fluidRow(
+                                        uiOutput('corr_factor.p')
+                                      ),
+                                      fluidRow(
+                                        column(6,
+                                               uiOutput('corr_levels.p1'),
+                                               plotOutput('corr_plot.p1', height = '800px')
+                                        ),
+                                        column(6,
+                                               uiOutput('corr_levels.p2'),
+                                               plotOutput('corr_plot.p2', height = '800px')
+                                          )
+                                        )
+                                      )
+                                    )
+                      ),
+                    ),
              tabPanel('Downloads',
                       fluidPage(
                         fluidRow(

@@ -389,6 +389,7 @@ shinyServer(function(input, output, session) {
   
 
   corr_levels <- reactive({
+    req(input$corr_factor)
     lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
     lvls
   })
@@ -398,6 +399,7 @@ shinyServer(function(input, output, session) {
   )
   
   corr_levels.p <- reactive({
+    req(input$corr_factor.p)
     if('exclusions' %in% input$corr_opts){
       lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
     }else{
@@ -414,6 +416,7 @@ shinyServer(function(input, output, session) {
   )
   
   hm.plot <- reactive({
+    req(input$corr_factor, input$corr_levels)
     hm.data <- property.data()
     
     if(input$corr_factor != 'None'){
@@ -447,6 +450,7 @@ shinyServer(function(input, output, session) {
   output$corr_plot <- renderPlot(hm.plot())
   
   hm.plot.p1 <- reactive({
+    req(input$corr_factor.p, input$corr_levels.p1)
     hm.data <- filt.data()
 
     if(input$corr_factor.p != 'None'){
@@ -472,7 +476,7 @@ shinyServer(function(input, output, session) {
       ttl2 <- 'All data'
     }
     
-    if('clustered' %in% input$corr_opts){
+    if('clustered' %in% input$corr_opts.p){
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1)
     }else{
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F)
@@ -482,6 +486,7 @@ shinyServer(function(input, output, session) {
   output$corr_plot.p1 <- renderPlot(hm.plot.p1())
   
   hm.plot.p2 <- reactive({
+    req(input$corr_factor.p, input$corr_levels.p2)
     hm.data <- property.data()
 
     if(input$corr_factor.p != 'None'){
@@ -507,7 +512,7 @@ shinyServer(function(input, output, session) {
     colnames(corr.data) <- colnames(hm.data)
     rownames(corr.data) <- colnames(hm.data)
     
-    if('clustered' %in% input$corr_opts){
+    if('clustered' %in% input$corr_opts.p){
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2)
     }else{
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F)
