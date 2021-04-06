@@ -8,8 +8,11 @@ library(plotly)
 library(shinyWidgets)
 library(readxl)
 library(jsonlite)
+library(shinycssloaders)
 
 useSweetAlert()
+
+source('busyIndicator.R')
 
 shinyUI(fluidPage(
   
@@ -23,7 +26,7 @@ shinyUI(fluidPage(
                                selectInput(inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
                               ),
                         column(4,
-                               uiOutput('avg.select')
+                               uiOutput('avg.select') %>% withSpinner()
                               )
                       ),
                       fluidRow(
@@ -59,13 +62,12 @@ shinyUI(fluidPage(
                           tabPanel('Preview', br(), br(),
                                    uiOutput('prev.factors'),
                                    radioButtons('prev.type', label = 'Plot type:', choices = list('Boxplot' = 'box', 'Violin plot' = 'violin'), inline = T),
-                                   helpText('Note: Preview plots may take a while to load.'),
-                                   plotlyOutput('prev.plot', height = '800px')
+                                   plotlyOutput('prev.plot', height = '800px') %>% withSpinner()
                                    ),
                           tabPanel('Summary', 
                                    radioButtons('statsumType', label = 'Show:', inline = T, choices = list('Factors' = 'factors', 'Variables' = 'variables')),
-                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors')),
-                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables'))
+                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors') %>% withSpinner()),
+                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables') %>% withSpinner())
                           )
                         )
                       )
@@ -75,18 +77,23 @@ shinyUI(fluidPage(
                         sidebarPanel(width = 3,
                                      radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual points' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
+                                     conditionalPanel(condition = "input.main_plot_type == 'dist'", sliderInput(inputId = 'plot_dist_opacity', label = 'Point opacity:', value = 1, min = 0, max = 1, step = 0.1)),
+                                     conditionalPanel(condition = "input.main_plot_type == 'bar'", radioButtons(inputId = 'bar_value', label = 'Error bars:', choices = c('SEM' = 'SEM', '95% CI' = 'CI'), selected = 'SEM')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
                                      uiOutput('plot_out_var'),
                                      uiOutput('plot_effect'),
                                      uiOutput('plot_x'),
-                                     uiOutput('plot_y')
+                                     uiOutput('plot_y'),
+                                     downloadButton(outputId = 'quickDownload', label = 'Download plot data')
                                      ),
                         mainPanel(
-                          radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
-                          conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px')),
-                          conditionalPanel(condition = "input.main_plot_type == 'hist'", plotlyOutput(outputId = 'hist_plot', height = '400px')),
-                          conditionalPanel(condition = "input.main_plot_type == 'cumsum'", plotOutput(outputId = 'cumsum_plot', height = '400px'))
+                          radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Bar plots' = 'bar', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
+                          conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px') %>% withSpinner()),
+                          conditionalPanel(condition = "input.main_plot_type == 'bar'", plotlyOutput(outputId = 'bar_plot', height = '400px') %>% withSpinner()),
+                          #conditionalPanel(condition = "input.main_plot_type == 'bar'", tableOutput(outputId = 'sum_data')),
+                          conditionalPanel(condition = "input.main_plot_type == 'hist'", plotlyOutput(outputId = 'hist_plot', height = '400px') %>% withSpinner()),
+                          conditionalPanel(condition = "input.main_plot_type == 'cumsum'", plotOutput(outputId = 'cumsum_plot', height = '400px') %>% withSpinner())
                         )
                       )
              ),
@@ -112,36 +119,43 @@ shinyUI(fluidPage(
                       )),
              tabPanel('Correlation',
                       fluidPage(
-                        fluidRow(
-                          checkboxGroupInput(inputId = 'corr_opts', label = 'Options:', choices = list('Clustered' = 'clustered', 'Pairwise' = 'pairwise'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
-                          ),
-                        conditionalPanel(condition = "input.corr_opts.indexOf('pairwise') == -1",
-                                         sidebarLayout(
-                                           sidebarPanel(
-                                             uiOutput('corr_factor'),
-                                             uiOutput('corr_levels')
-                                           ),
-                                           mainPanel(
-                                             plotOutput('corr_plot', height = '800px')
-                                           )
-                                         )
-                        ),
-                        conditionalPanel(condition = "input.corr_opts.indexOf('pairwise') != -1",
-                                         fluidRow(
-                                           uiOutput('corr_factor.p')
-                                         ),
-                                         fluidRow(
-                                           column(6,
-                                                  uiOutput('corr_levels.p1'),
-                                                  plotOutput('corr_plot.p1', height = '800px')
-                                           ),
-                                           column(6,
-                                                  uiOutput('corr_levels.p2'),
-                                                  plotOutput('corr_plot.p2', height = '800px')
-                                           )
-                                         )
-                        )
-                      )),
+                        tabsetPanel(type = 'pills',
+                                    tabPanel('Condition',
+                                             fluidRow(
+                                               checkboxGroupInput(inputId = 'corr_opts', label = '', choices = list('Clustered' = 'clustered'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
+                                             ),
+                                             sidebarLayout(
+                                               sidebarPanel(
+                                                 uiOutput('corr_factor'),
+                                                 conditionalPanel(condition = "input.corr_factor != 'None'", uiOutput('corr_levels'))
+                                                 #uiOutput('corr_levels')
+                                               ),
+                                               mainPanel(
+                                                 plotOutput('corr_plot', height = '800px') %>% withSpinner()
+                                               )
+                                             )
+                                    ),
+                                    tabPanel('Pairwise',
+                                      fluidRow(
+                                        checkboxGroupInput(inputId = 'corr_opts.p', label = '', choices = list('Clustered' = 'clustered'), inline = T), helpText("Correlation data is selected on the 'Data select' tab.")
+                                      ),
+                                      fluidRow(
+                                        uiOutput('corr_factor.p')
+                                      ),
+                                      fluidRow(
+                                        column(6,
+                                               uiOutput('corr_levels.p1'),
+                                               plotOutput('corr_plot.p1', height = '800px') %>% withSpinner()
+                                        ),
+                                        column(6,
+                                               uiOutput('corr_levels.p2'),
+                                               plotOutput('corr_plot.p2', height = '800px') %>% withSpinner()
+                                          )
+                                        )
+                                      )
+                                    )
+                      ),
+                    ),
              tabPanel('Downloads',
                       fluidPage(
                         fluidRow(
@@ -153,7 +167,7 @@ shinyUI(fluidPage(
                           column(2, downloadButton(outputId = 'downloadDataCSV', label = 'Download .csv'))
                           ), br(),
                         fluidRow(
-                          DT::dataTableOutput('down.table')
+                          DT::dataTableOutput('down.table') %>% withSpinner()
                         )
                       )),
              tabPanel('Configuration',
@@ -165,13 +179,17 @@ shinyUI(fluidPage(
                           textInput(inputId = 'ds_name', 'Dataset name:'),
                           textInput(inputId = 'ds_factors', 'Number of factors:'),
                           textAreaInput(inputId = 'ds_desc', 'Description:', rows = 3),
-                          actionButton(inputId = 'ds_submit', 'Submit')
+                          withBusyIndicatorUI(
+                            actionButton(inputId = 'ds_submit', 'Submit') 
+                          )
                         ),
                         column(width = 6,
                           h2('Update dataset'),
                           fileInput(inputId = 'update_file', label = 'Upload updated dataset', multiple = F, accept = c('.csv', '.xls', '.xlsx'), buttonLabel = 'Upload'),
                           uiOutput('ds_update_select'),
-                          actionButton(inputId = 'ds_update', 'Update'),
+                          withBusyIndicatorUI(
+                            actionButton(inputId = 'ds_update', 'Update')
+                          ),
                           h2('Remove dataset'),
                           selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, multiple = F),
                           actionButton(inputId = 'ds_remove', 'Remove')

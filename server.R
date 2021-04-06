@@ -14,7 +14,8 @@ library(lme4)
 library(car)
 library(summarytools)
 
-
+source('busyIndicator.R')
+source('summarySE.R')
 
 shinyServer(function(input, output, session) {
   
@@ -183,7 +184,7 @@ shinyServer(function(input, output, session) {
       paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
     })
     
-    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
     
@@ -240,16 +241,15 @@ shinyServer(function(input, output, session) {
     output$plot_y <- plot_y
   })
   
-  
   addFaceting <- function(pl){
     if(input$plot_x != 'None' & input$plot_y == 'None'){
-      form <- str_c('.~', input$plot_x) %>% as.formula
+      form <- str_c('.~ `', input$plot_x, '`') %>% as.formula
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
     }else if(input$plot_x == 'None' & input$plot_y != 'None'){
-      form <- str_c(input$plot_y, '~.') %>% as.formula
+      form <- str_c('`', input$plot_y, '` ~.') %>% as.formula
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
     }else if(input$plot_x != 'None' & input$plot_y != 'None'){
-      form <- str_c(input$plot_y, '~', input$plot_x) %>% as.formula
+      form <- str_c('`', input$plot_y, '` ~ `', input$plot_x, '`') %>% as.formula
       pl <- pl + facet_grid(form, switch = 'y', scales = 'free_x')
     }
     return(pl)
@@ -263,7 +263,6 @@ shinyServer(function(input, output, session) {
     
     if(input$plot_data == 'cell'){
       
-      #dplot <- ggplot(filt.data(), aes_string(x = as.name(x.var), y = as.name(y.var))) + theme_bw()
       dplot <- ggplot(filt.data(), aes_string(x = x.var, y = y.var)) + theme_bw()
       
       if(input$plot_dist_type == 'box'){
@@ -278,10 +277,10 @@ shinyServer(function(input, output, session) {
       
       dplot$data$Info <- tooltip.txt
       if(length(hl.pIDs()) == 0){
-        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
       }else{
         dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
-        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl)) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
+        dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl), alpha = input$plot_dist_opacity) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
       }
     
       
@@ -304,7 +303,7 @@ shinyServer(function(input, output, session) {
         dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
       }
 
-      dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info))
+      dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
     }
     dplot <- addFaceting(dplot)
     
@@ -324,6 +323,120 @@ shinyServer(function(input, output, session) {
   
   
   output$dist_plot <- renderPlotly(dist.plot()$plot)
+  
+  ### Errorbar plot
+  
+  bar_plot <- reactive({
+    x.var <- str_c('`', input$plot_effect %>% as.character, '`')
+    y.var <- str_c('`', input$plot_out_var %>% as.character, '`')
+    
+    if(input$plot_data == 'cell'){
+      
+      gvar <- str_c('`', input$plot_effect, '`')
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_x, '`'))
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_y, '`'))
+      }
+      
+      sum.data <- summarySE(data = filt.data(), measurevar = input$plot_out_var,
+                            groupvars = gvar,
+                            na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci)
+      
+      
+      bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
+        geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
+                 data = sum.data, width = 0.5)
+      
+      if(input$bar_value == 'SEM'){
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE),
+                                       data = sum.data, width = 0.3)
+      }else{
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerCI, ymax = upperCI),
+                                       data = sum.data, width = 0.3)
+      }
+      
+      if(all(na.omit(sum.data[, input$plot_out_var]) <= 0)){
+        bplot <- bplot + scale_y_reverse()
+      }
+      
+    }else if(input$plot_data == 'animal'){
+      
+      
+      a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      
+      gvar <- input$plot_effect
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, input$plot_x)
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, input$plot_y)
+      }
+      
+      sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
+                            groupvars = gvar, na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci)
+      
+      
+      bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
+        geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
+                 data = sum.data, width = 0.5)
+      
+      if(input$bar_value == 'SEM'){
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE), width = 0.3,
+                                       position = position_dodge(0.9), data = sum.data)
+      }else{
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerCI, ymax = upperCI), width = 0.3,
+                                       position = position_dodge(0.9), data = sum.data)
+      }
+      
+      if(all(na.omit(sum.data[, input$plot_out_var]) <= 0)){
+        bplot <- bplot + scale_y_reverse()
+      }
+    }
+    bplot <- addFaceting(bplot)
+    
+    bplot <- ggplotly(bplot)
+    bplot
+    
+  })
+  
+  output$bar_plot <- renderPlotly(bar_plot())
+  
+  ### Table testing
+  
+  sumSE_test <- reactive({
+    a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+    
+    gvar <- input$plot_effect
+    if(input$plot_x != 'None'){
+      gvar <- c(gvar, input$plot_x)
+    }
+    if(input$plot_y != 'None'){
+      gvar <- c(gvar, input$plot_y)
+    }
+    
+    sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
+                          groupvars = gvar)
+    sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                    upperSE = sum.data[, input$plot_out_var] + se,
+                                    lowerCI = sum.data[, input$plot_out_var] - ci,
+                                    upperCI = sum.data[, input$plot_out_var] + ci)
+    
+    save(sum.data, a.hi.data, file = 'sumdata.RData')
+    
+    sum.data
+
+  })
+  output$sum_data <- renderTable(sumSE_test())
   
   ### Histogram
   
@@ -390,7 +503,12 @@ shinyServer(function(input, output, session) {
   
 
   corr_levels <- reactive({
-    lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
+    #if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
+      lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
+    }else{
+      lvls <- 'All data'
+    }
     lvls
   })
   
@@ -399,10 +517,10 @@ shinyServer(function(input, output, session) {
   )
   
   corr_levels.p <- reactive({
-    if('exclusions' %in% input$corr_opts){
+    if(input$corr_factor.p != 'None'){
       lvls <- filt.data() %>% pull(input$corr_factor.p) %>% unique
     }else{
-      lvls <- property.data() %>% pull(input$corr_factor.p) %>% unique
+      lvls <- 'All data'
     }
     lvls
   })
@@ -417,7 +535,7 @@ shinyServer(function(input, output, session) {
   hm.plot <- reactive({
     hm.data <- property.data()
     
-    if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
       hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
       hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
@@ -432,7 +550,7 @@ shinyServer(function(input, output, session) {
     colnames(corr.data) <- colnames(hm.data)
     rownames(corr.data) <- colnames(hm.data)
     
-    if(input$corr_factor != 'None'){
+    if(!('None' %in% input$corr_factor)){
       ttl = str_c(input$corr_factor, ' ', input$corr_levels)
     }else{
       ttl <- 'All data'
@@ -448,6 +566,7 @@ shinyServer(function(input, output, session) {
   output$corr_plot <- renderPlot(hm.plot())
   
   hm.plot.p1 <- reactive({
+    req(input$corr_factor.p, input$corr_levels.p1)
     hm.data <- filt.data()
 
     if(input$corr_factor.p != 'None'){
@@ -473,7 +592,7 @@ shinyServer(function(input, output, session) {
       ttl2 <- 'All data'
     }
     
-    if('clustered' %in% input$corr_opts){
+    if('clustered' %in% input$corr_opts.p){
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1)
     }else{
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F)
@@ -483,6 +602,7 @@ shinyServer(function(input, output, session) {
   output$corr_plot.p1 <- renderPlot(hm.plot.p1())
   
   hm.plot.p2 <- reactive({
+    req(input$corr_factor.p, input$corr_levels.p2)
     hm.data <- property.data()
 
     if(input$corr_factor.p != 'None'){
@@ -508,7 +628,7 @@ shinyServer(function(input, output, session) {
     colnames(corr.data) <- colnames(hm.data)
     rownames(corr.data) <- colnames(hm.data)
     
-    if('clustered' %in% input$corr_opts){
+    if('clustered' %in% input$corr_opts.p){
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2)
     }else{
       pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F)
@@ -516,6 +636,25 @@ shinyServer(function(input, output, session) {
   })
   
   output$corr_plot.p2 <- renderPlot(hm.plot.p2())
+  
+  ## Quick download
+  qDown.table <- reactive({
+    qdt <- filt.data() %>% select(c(input$plot_out_var, input$plot_effect))
+    if(input$plot_x != 'None'){
+      qdt  <- cbind(qdt, filt.data() %>% select(input$plot_x))
+    }
+    if(input$plot_y != 'None'){
+      qdt  <- cbind(qdt, filt.data() %>% select(input$plot_y))
+    }
+    qdt
+  })
+  
+  output$quickDownload <- downloadHandler(filename = 'plotData.xlsx', content = function(file){
+    d <- qDown.table()
+    WriteXLS::WriteXLS(x = d, ExcelFileName = file, AdjWidth = T, FreezeRow = 1)
+  })
+  
+  
   
   ## Downloads table
   
@@ -549,6 +688,11 @@ shinyServer(function(input, output, session) {
   ### Configuration
   config <- jsonlite::fromJSON(txt = 'config.json')
   
+  ### Function to update restart.txt when config files are changed
+  updateRestart <- function(){
+    write('', file = 'restart.txt')
+  }
+  
   ## App title and description
   observeEvent(input$app_save, {
     if(config$Title != input$app_name){
@@ -560,6 +704,7 @@ shinyServer(function(input, output, session) {
     config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
     config <<- config
     sendSweetAlert(session = session, title = 'Configuration', text = 'Saved.', btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ##Remove dataset
@@ -573,20 +718,24 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
     datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
     sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
+    updateRestart()
   })
   
   ##Add dataset
   observeEvent(input$ds_submit, {
-    ds_fname <- input$add_file$name
-    file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
-    config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
-    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-    output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
-    config <<- config
-    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
+    withBusyIndicatorServer('ds_submit',{
+      ds_fname <- input$add_file$name
+      file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
+      config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
+      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+      output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
+      config <<- config
+      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
+      updateRestart()
+    })
   })
   
   ## Update dataset
@@ -594,17 +743,20 @@ shinyServer(function(input, output, session) {
     selectInput(inputId = 'ds_update_name', label = 'Select dataset to update:', choices = datasets$Name, selected = datasets$Name[1], multiple = F)
   })
   observeEvent(input$ds_update, {
-    old.file <- config$Datasets %>% filter(Name == input$ds_update_name) %>% pull(Path)
-    new.file <- input$update_file$name
-    file.rename(from = old.file, to = str_c('Archive_', format(Sys.time(), "%a%b%d%Y_%H%M", old.file)))
-    file.copy(from = input$update_file$datapath, to = str_c('data/', new.file))
-    config$Datasets[config$Datasets$Name == input$ds_update_name, 'Path'] <- str_c('data/', new.file)
-    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-    config <<- config
-    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
+    withBusyIndicatorServer('ds_update', {
+      old.file <- config$Datasets %>% filter(Name == input$ds_update_name) %>% pull(Path)
+      new.file <- input$update_file$name
+      file.rename(from = old.file, to = str_c('Archive_', format(Sys.time(), "%a%b%d%Y_%H%M", old.file)))
+      file.copy(from = input$update_file$datapath, to = str_c('data/', new.file))
+      config$Datasets[config$Datasets$Name == input$ds_update_name, 'Path'] <- str_c('data/', new.file)
+      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+      config <<- config
+      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_update_name, ' dataset updated'), btn_labels = 'Confirm', type = 'success')
+      updateRestart()
+    })
   })
   
   ## Basic LMM
