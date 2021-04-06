@@ -332,12 +332,12 @@ shinyServer(function(input, output, session) {
     
     if(input$plot_data == 'cell'){
       
-      gvar <- input$plot_effect
+      gvar <- str_c('`', input$plot_effect, '`')
       if(input$plot_x != 'None'){
-        gvar <- c(gvar, input$plot_x)
+        gvar <- c(gvar, str_c('`', input$plot_x, '`'))
       }
       if(input$plot_y != 'None'){
-        gvar <- c(gvar, input$plot_y)
+        gvar <- c(gvar, str_c('`', input$plot_y, '`'))
       }
       
       sum.data <- summarySE(data = filt.data(), measurevar = input$plot_out_var,
