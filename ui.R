@@ -8,6 +8,7 @@ library(plotly)
 library(shinyWidgets)
 library(readxl)
 library(jsonlite)
+library(shinycssloaders)
 
 useSweetAlert()
 
@@ -25,7 +26,7 @@ shinyUI(fluidPage(
                                selectInput(inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
                               ),
                         column(4,
-                               uiOutput('avg.select')
+                               uiOutput('avg.select') %>% withSpinner()
                               )
                       ),
                       fluidRow(
@@ -61,13 +62,12 @@ shinyUI(fluidPage(
                           tabPanel('Preview', br(), br(),
                                    uiOutput('prev.factors'),
                                    radioButtons('prev.type', label = 'Plot type:', choices = list('Boxplot' = 'box', 'Violin plot' = 'violin'), inline = T),
-                                   helpText('Note: Preview plots may take a while to load.'),
-                                   plotlyOutput('prev.plot', height = '800px')
+                                   plotlyOutput('prev.plot', height = '800px') %>% withSpinner()
                                    ),
                           tabPanel('Summary', 
                                    radioButtons('statsumType', label = 'Show:', inline = T, choices = list('Factors' = 'factors', 'Variables' = 'variables')),
-                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors')),
-                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables'))
+                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors') %>% withSpinner()),
+                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables') %>% withSpinner())
                           )
                         )
                       )
@@ -89,11 +89,11 @@ shinyUI(fluidPage(
                                      ),
                         mainPanel(
                           radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Bar plots' = 'bar', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
-                          conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px')),
-                          conditionalPanel(condition = "input.main_plot_type == 'bar'", plotlyOutput(outputId = 'bar_plot', height = '400px')),
+                          conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px') %>% withSpinner()),
+                          conditionalPanel(condition = "input.main_plot_type == 'bar'", plotlyOutput(outputId = 'bar_plot', height = '400px') %>% withSpinner()),
                           #conditionalPanel(condition = "input.main_plot_type == 'bar'", tableOutput(outputId = 'sum_data')),
-                          conditionalPanel(condition = "input.main_plot_type == 'hist'", plotlyOutput(outputId = 'hist_plot', height = '400px')),
-                          conditionalPanel(condition = "input.main_plot_type == 'cumsum'", plotOutput(outputId = 'cumsum_plot', height = '400px'))
+                          conditionalPanel(condition = "input.main_plot_type == 'hist'", plotlyOutput(outputId = 'hist_plot', height = '400px') %>% withSpinner()),
+                          conditionalPanel(condition = "input.main_plot_type == 'cumsum'", plotOutput(outputId = 'cumsum_plot', height = '400px') %>% withSpinner())
                         )
                       )
              ),
@@ -131,7 +131,7 @@ shinyUI(fluidPage(
                                                  #uiOutput('corr_levels')
                                                ),
                                                mainPanel(
-                                                 plotOutput('corr_plot', height = '800px')
+                                                 plotOutput('corr_plot', height = '800px') %>% withSpinner()
                                                )
                                              )
                                     ),
@@ -145,11 +145,11 @@ shinyUI(fluidPage(
                                       fluidRow(
                                         column(6,
                                                uiOutput('corr_levels.p1'),
-                                               plotOutput('corr_plot.p1', height = '800px')
+                                               plotOutput('corr_plot.p1', height = '800px') %>% withSpinner()
                                         ),
                                         column(6,
                                                uiOutput('corr_levels.p2'),
-                                               plotOutput('corr_plot.p2', height = '800px')
+                                               plotOutput('corr_plot.p2', height = '800px') %>% withSpinner()
                                           )
                                         )
                                       )
@@ -167,7 +167,7 @@ shinyUI(fluidPage(
                           column(2, downloadButton(outputId = 'downloadDataCSV', label = 'Download .csv'))
                           ), br(),
                         fluidRow(
-                          DT::dataTableOutput('down.table')
+                          DT::dataTableOutput('down.table') %>% withSpinner()
                         )
                       )),
              tabPanel('Configuration',
