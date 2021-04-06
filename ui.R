@@ -78,6 +78,7 @@ shinyUI(fluidPage(
                                      radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual points' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", sliderInput(inputId = 'plot_dist_opacity', label = 'Point opacity:', value = 1, min = 0, max = 1, step = 0.1)),
+                                     conditionalPanel(condition = "input.main_plot_type == 'bar'", radioButtons(inputId = 'bar_value', label = 'Error bars:', choices = c('SEM' = 'SEM', '95% CI' = 'CI'), selected = 'SEM')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist' && input.plot_hist_type == 'bars'", sliderInput(inputId = 'plot_hist_bins', label = 'Bins:', min = 10, max = 50, value = 20)),
                                      uiOutput('plot_out_var'),
@@ -87,8 +88,10 @@ shinyUI(fluidPage(
                                      downloadButton(outputId = 'quickDownload', label = 'Download plot data')
                                      ),
                         mainPanel(
-                          radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
+                          radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Bar plots' = 'bar', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
                           conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px')),
+                          conditionalPanel(condition = "input.main_plot_type == 'bar'", plotlyOutput(outputId = 'bar_plot', height = '400px')),
+                          #conditionalPanel(condition = "input.main_plot_type == 'bar'", tableOutput(outputId = 'sum_data')),
                           conditionalPanel(condition = "input.main_plot_type == 'hist'", plotlyOutput(outputId = 'hist_plot', height = '400px')),
                           conditionalPanel(condition = "input.main_plot_type == 'cumsum'", plotOutput(outputId = 'cumsum_plot', height = '400px'))
                         )

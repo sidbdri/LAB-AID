@@ -15,6 +15,7 @@ library(car)
 library(summarytools)
 
 source('busyIndicator.R')
+source('summarySE.R')
 
 shinyServer(function(input, output, session) {
   
@@ -262,7 +263,6 @@ shinyServer(function(input, output, session) {
     
     if(input$plot_data == 'cell'){
       
-      #dplot <- ggplot(filt.data(), aes_string(x = as.name(x.var), y = as.name(y.var))) + theme_bw()
       dplot <- ggplot(filt.data(), aes_string(x = x.var, y = y.var)) + theme_bw()
       
       if(input$plot_dist_type == 'box'){
@@ -323,6 +323,120 @@ shinyServer(function(input, output, session) {
   
   
   output$dist_plot <- renderPlotly(dist.plot()$plot)
+  
+  ### Errorbar plot
+  
+  bar_plot <- reactive({
+    x.var <- str_c('`', input$plot_effect %>% as.character, '`')
+    y.var <- str_c('`', input$plot_out_var %>% as.character, '`')
+    
+    if(input$plot_data == 'cell'){
+      
+      gvar <- input$plot_effect
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, input$plot_x)
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, input$plot_y)
+      }
+      
+      sum.data <- summarySE(data = filt.data(), measurevar = input$plot_out_var,
+                            groupvars = gvar,
+                            na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci)
+      
+      
+      bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
+        geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
+                 data = sum.data, width = 0.5)
+      
+      if(input$bar_value == 'SEM'){
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE),
+                                       data = sum.data, width = 0.3)
+      }else{
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerCI, ymax = upperCI),
+                                       data = sum.data, width = 0.3)
+      }
+      
+      if(all(na.omit(sum.data[, input$plot_out_var]) <= 0)){
+        bplot <- bplot + scale_y_reverse()
+      }
+      
+    }else if(input$plot_data == 'animal'){
+      
+      
+      a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      
+      gvar <- input$plot_effect
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, input$plot_x)
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, input$plot_y)
+      }
+      
+      sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
+                            groupvars = gvar, na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci)
+      
+      
+      bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
+        geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
+                 data = sum.data, width = 0.5)
+      
+      if(input$bar_value == 'SEM'){
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE), width = 0.3,
+                                       position = position_dodge(0.9), data = sum.data)
+      }else{
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerCI, ymax = upperCI), width = 0.3,
+                                       position = position_dodge(0.9), data = sum.data)
+      }
+      
+      if(all(na.omit(sum.data[, input$plot_out_var]) <= 0)){
+        bplot <- bplot + scale_y_reverse()
+      }
+    }
+    bplot <- addFaceting(bplot)
+    
+    bplot <- ggplotly(bplot)
+    bplot
+    
+  })
+  
+  output$bar_plot <- renderPlotly(bar_plot())
+  
+  ### Table testing
+  
+  sumSE_test <- reactive({
+    a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+    
+    gvar <- input$plot_effect
+    if(input$plot_x != 'None'){
+      gvar <- c(gvar, input$plot_x)
+    }
+    if(input$plot_y != 'None'){
+      gvar <- c(gvar, input$plot_y)
+    }
+    
+    sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
+                          groupvars = gvar)
+    sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                    upperSE = sum.data[, input$plot_out_var] + se,
+                                    lowerCI = sum.data[, input$plot_out_var] - ci,
+                                    upperCI = sum.data[, input$plot_out_var] + ci)
+    
+    save(sum.data, a.hi.data, file = 'sumdata.RData')
+    
+    sum.data
+
+  })
+  output$sum_data <- renderTable(sumSE_test())
   
   ### Histogram
   
