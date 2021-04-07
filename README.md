@@ -53,6 +53,7 @@ Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (
 - [shiny](https://cran.r-project.org/web/packages/shiny/index.html)
 - [shinyjs](https://cran.r-project.org/web/packages/shinyjs/index.html)
 - [shinyWidgets](https://github.com/dreamRs/shinyWidgets)
+- [shinycssloaders](https://cran.r-project.org/web/packages/shinycssloaders/index.html)
 - [tidyverse](https://cran.r-project.org/web/packages/tidyverse/index.html)
 - [magrittr](https://cran.r-project.org/web/packages/magrittr/index.html)
 - [readxl](https://cran.r-project.org/web/packages/readxl/index.html)
