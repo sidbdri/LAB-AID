@@ -388,7 +388,9 @@ shinyServer(function(input, output, session) {
       sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
                                       upperSE = sum.data[, input$plot_out_var] + se,
                                       lowerCI = sum.data[, input$plot_out_var] - ci,
-                                      upperCI = sum.data[, input$plot_out_var] + ci)
+                                      upperCI = sum.data[, input$plot_out_var] + ci,
+                                      lowerSD = sum.data[, input$plot_out_var] - sd,
+                                      upperSD = sum.data[, input$plot_out_var] + sd)
       
       
       bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
@@ -398,8 +400,11 @@ shinyServer(function(input, output, session) {
       if(input$bar_value == 'SEM'){
         bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE), width = 0.3,
                                        position = position_dodge(0.9), data = sum.data)
-      }else{
+      }else if(input$bar_value == 'CI'){
         bplot <- bplot + geom_errorbar(aes(ymin = lowerCI, ymax = upperCI), width = 0.3,
+                                       position = position_dodge(0.9), data = sum.data)
+      }else if(input$bar_value == 'SD'){
+        bplot <- bplot + geom_errorbar(aes(ymin = lowerSD, ymax = upperSD), width = 0.3,
                                        position = position_dodge(0.9), data = sum.data)
       }
       
