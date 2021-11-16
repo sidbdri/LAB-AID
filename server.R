@@ -265,12 +265,30 @@ shinyServer(function(input, output, session) {
       
       dplot <- ggplot(filt.data(), aes_string(x = x.var, y = y.var)) + theme_bw()
       
+      gvar <- str_c('`', input$plot_effect, '`')
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_x, '`'))
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_y, '`'))
+      }
+      
+      sum.data <- summarySE(data = filt.data(), measurevar = input$plot_out_var,
+                            groupvars = gvar,
+                            na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci,
+                                      lowerSD = sum.data[, input$plot_out_var] - sd,
+                                      upperSD = sum.data[, input$plot_out_var] + sd)
+      
       if(input$plot_dist_type == 'box'){
         dplot <- dplot + geom_boxplot(fill = 'gray87', outlier.shape = NA) 
       }else if(input$plot_dist_type == 'violin'){
         dplot <- dplot + geom_violin(trim = F, fill = 'gray87')
       }
-      
+
       tooltip.txt <- apply(filt.data()[, 1:n.factors()], 1, function(x){
         paste(str_c(colnames(filt.data())[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
       })
@@ -282,12 +300,46 @@ shinyServer(function(input, output, session) {
         dplot$data$hl <- as.numeric(filt.data()$pID) %in% hl.pIDs()
         dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info, colour = hl), alpha = input$plot_dist_opacity) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black')) + theme(legend.position="none")
       }
-    
+      
+      if(input$plot_dist_type == 'SEM'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerSE, ymax = upperSE),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerSE, ymax = upperSE),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }else if(input$plot_dist_type == 'CI'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerCI, ymax = upperCI),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerCI, ymax = upperCI),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }else if(input$plot_dist_type == 'SD'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerSD, ymax = upperSD),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerSD, ymax = upperSD),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }
       
     }else if(input$plot_data == 'animal'){
       
       
       a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
+      
+      gvar <- str_c('`', input$plot_effect, '`')
+      if(input$plot_x != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_x, '`'))
+      }
+      if(input$plot_y != 'None'){
+        gvar <- c(gvar, str_c('`', input$plot_y, '`'))
+      }
+      
+      sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
+                            groupvars = gvar,
+                            na.rm = T)
+      sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
+                                      upperSE = sum.data[, input$plot_out_var] + se,
+                                      lowerCI = sum.data[, input$plot_out_var] - ci,
+                                      upperCI = sum.data[, input$plot_out_var] + ci,
+                                      lowerSD = sum.data[, input$plot_out_var] - sd,
+                                      upperSD = sum.data[, input$plot_out_var] + sd)
       
       tooltip.txt <- apply(a.hi.data[, 1:length(input$avg)], 1, function(x){
         paste(str_c(colnames(a.hi.data)[1:length(input$avg)], ': ', as.character(x), '<br>'), sep = '', collapse = '')
@@ -304,6 +356,23 @@ shinyServer(function(input, output, session) {
       }
 
       dplot <- dplot + geom_jitter(width = 0.2, height = 0, aes(text = Info), alpha = input$plot_dist_opacity)
+      
+      if(input$plot_dist_type == 'SEM'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerSE, ymax = upperSE),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerSE, ymax = upperSE),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }else if(input$plot_dist_type == 'CI'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerCI, ymax = upperCI),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerCI, ymax = upperCI),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }else if(input$plot_dist_type == 'SD'){
+        dplot <- dplot + geom_pointrange(aes(ymin = lowerSD, ymax = upperSD),
+                                         data = sum.data, width = 0.3, colour = 'red') + 
+          geom_errorbar(aes(ymin = lowerSD, ymax = upperSD),
+                        data = sum.data, width = 0.3, colour = 'red')
+      }
     }
     dplot <- addFaceting(dplot)
     
@@ -421,31 +490,7 @@ shinyServer(function(input, output, session) {
   
   output$bar_plot <- renderPlotly(bar_plot())
   
-  ### Table testing
-  
-  sumSE_test <- reactive({
-    a.hi.data <- filt.data() %>% group_by_at(match(input$avg, colnames(.))) %>% select((n.factors() + 1):ncol(.)) %>% summarize_all(mean, na.rm = T)
-    
-    gvar <- input$plot_effect
-    if(input$plot_x != 'None'){
-      gvar <- c(gvar, input$plot_x)
-    }
-    if(input$plot_y != 'None'){
-      gvar <- c(gvar, input$plot_y)
-    }
-    
-    sum.data <- summarySE(data = a.hi.data, measurevar = input$plot_out_var,
-                          groupvars = gvar)
-    sum.data <- sum.data %>% mutate(lowerSE = sum.data[, input$plot_out_var] - se,
-                                    upperSE = sum.data[, input$plot_out_var] + se,
-                                    lowerCI = sum.data[, input$plot_out_var] - ci,
-                                    upperCI = sum.data[, input$plot_out_var] + ci)
-    
-    save(sum.data, a.hi.data, file = 'sumdata.RData')
-    
-    sum.data
 
-  })
   output$sum_data <- renderTable(sumSE_test())
   
   ### Histogram

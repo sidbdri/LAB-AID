@@ -76,7 +76,7 @@ shinyUI(fluidPage(
                       sidebarLayout(
                         sidebarPanel(width = 3,
                                      radioButtons(inputId = 'plot_data', label = 'Data:', choices = c('Individual points' = 'cell', 'Averaged' = 'animal'), selected = 'cell'),
-                                     conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin'), selected = 'box')),
+                                     conditionalPanel(condition = "input.main_plot_type == 'dist'", radioButtons(inputId = 'plot_dist_type', label = 'Plot type:', choices = c('Boxplot' = 'box', 'Violin plot' = 'violin', 'SEM' = 'SEM', '95% CI' = 'CI', 'SD' = 'SD'), selected = 'box')),
                                      conditionalPanel(condition = "input.main_plot_type == 'dist'", sliderInput(inputId = 'plot_dist_opacity', label = 'Point opacity:', value = 1, min = 0, max = 1, step = 0.1)),
                                      conditionalPanel(condition = "input.main_plot_type == 'bar'", radioButtons(inputId = 'bar_value', label = 'Error bars:', choices = c('SEM' = 'SEM', '95% CI' = 'CI', 'SD' = 'SD'), selected = 'SEM')),
                                      conditionalPanel(condition = "input.main_plot_type == 'hist'", radioButtons(inputId = 'plot_hist_type', label = 'Plot type:', choices = c('Bars' = 'bars', 'Smooth' = 'smooth'), selected = 'bars')),
@@ -210,7 +210,8 @@ shinyUI(fluidPage(
                         tags$div(
                           HTML(paste0("<h3>", x[1], "</h3>", "<p>", x[4], "</p><br>"))
                         )
-                      })
+                      }), br(),
+                      tableOutput(outputId = 'sum_data')
                       )
   )
   
