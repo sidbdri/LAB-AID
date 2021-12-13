@@ -422,7 +422,7 @@ shinyServer(function(input, output, session) {
       
       bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
         geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
-                 data = sum.data, width = 0.5)
+                 data = sum.data, width = 0.5, fill = 'grey', colour = 'darkgrey')
       
       if(input$bar_value == 'SEM'){
         bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE),
@@ -464,7 +464,7 @@ shinyServer(function(input, output, session) {
       
       bplot <- ggplot(sum.data, aes_string(x = x.var, y = y.var)) + theme_bw() + 
         geom_bar(aes_string(x = x.var, y = y.var), position_dodge(), stat = 'identity',
-                 data = sum.data, width = 0.5)
+                 data = sum.data, width = 0.5, fill = 'grey', colour = 'darkgrey')
       
       if(input$bar_value == 'SEM'){
         bplot <- bplot + geom_errorbar(aes(ymin = lowerSE, ymax = upperSE), width = 0.3,
