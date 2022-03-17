@@ -778,19 +778,23 @@ shinyServer(function(input, output, session) {
   
   ##Add dataset
   observeEvent(input$ds_submit, {
-    withBusyIndicatorServer('ds_submit',{
-      ds_fname <- input$add_file$name
-      file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
-      config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
-      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-      output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
-      config <<- config
-      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
-      updateRestart()
-    })
+    if(input$ds_factors == '' | input$ds_name == ''){
+      sendSweetAlert(session = session, title = 'Error', text = "'Dataset name' and 'Number of factors' must be specified.", btn_labels = 'Confirm', type = 'error')
+    }else{
+      withBusyIndicatorServer('ds_submit',{
+        ds_fname <- input$add_file$name
+        file.copy(from = input$add_file$datapath, to = str_c('data/', ds_fname))
+        config$Datasets <- config$Datasets %>% rbind(c(input$ds_name, str_c('data/', ds_fname), input$ds_factors, input$ds_desc)) %>% mutate(n.Factors = as.numeric(n.Factors))
+        config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+        output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name))
+        config <<- config
+        updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+        updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+        datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+        sendSweetAlert(session = session, title = 'Success!', text = str_c(input$ds_name, ' dataset added.'), btn_labels = 'Confirm', type = 'success')
+        updateRestart()
+      })
+    }
   })
   
   ## Update dataset
