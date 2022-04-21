@@ -765,15 +765,20 @@ shinyServer(function(input, output, session) {
   ##Remove dataset
   output$remove_ds_ui <- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name, multiple = F))
   observeEvent(input$ds_remove, {
-    config$Datasets <- config$Datasets %>% filter(Name != input$rm_select)
-    config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
-    output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name, multiple = F))
-    config <<- config
-    updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
-    updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
-    datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
-    sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
-    updateRestart()
+    if(nrow(config$Datasets) == 1){
+      sendSweetAlert(session = session, title = 'Error', text = "Unable to remove. Minimum one dataset required.", btn_labels = 'Confirm', type = 'error')
+    }else{
+      config$Datasets <- config$Datasets %>% filter(Name != input$rm_select)
+      config %>% jsonlite::toJSON(pretty = T) %>% write(file = 'config.json')
+      output$remove_ds_ui <<- renderUI(selectInput(inputId = 'rm_select', 'Select dataset to remove:', choices = config$Datasets$Name, multiple = F))
+      config <<- config
+      updateSelectInput(session = session, inputId = 'rm_select', 'Select dataset to remove:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name)
+      updateSelectInput(session = session, inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
+      datasets <<- jsonlite::fromJSON(txt = 'config.json')$Datasets
+      sendSweetAlert(session = session, title = 'Success!', text = str_c(input$rm_select, " dataset removed."), btn_labels = 'Confirm', type = 'success')
+      updateRestart()
+    }
+
   })
   
   ##Add dataset
