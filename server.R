@@ -213,7 +213,7 @@ shinyServer(function(input, output, session) {
   
   
   ### Main plot UI elements
-  observeEvent(input$dataset,
+  observeEvent(c(input$dataset, input$plot_data, input$avg),
     {
     
     plot_out_var <-  renderUI({
@@ -223,19 +223,37 @@ shinyServer(function(input, output, session) {
     output$plot_out_var <- plot_out_var
     
     plot_effect <- renderUI({
-      choice <- reactive({colnames(property.data())[2:n.factors()]})
+      choice <- reactive({
+        if(input$plot_data == 'cell'){
+          colnames(property.data())[2:n.factors()]
+        }else if(input$plot_data == 'animal'){
+          input$avg
+        }
+      })
       selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice())
     })
     output$plot_effect <- plot_effect
     
     plot_x <- renderUI({
-      choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
+      choice <- reactive({c('None', 
+                            if(input$plot_data == 'cell'){
+                              colnames(property.data())[2:n.factors()]
+                            }else if(input$plot_data == 'animal'){
+                              input$avg
+                            }
+                            )})
       selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice())
     })
     output$plot_x <- plot_x
     
     plot_y <- renderUI({
-      choice <- reactive({c('None', colnames(property.data())[2:n.factors()])})
+      choice <- reactive({c('None', 
+                            if(input$plot_data == 'cell'){
+                              colnames(property.data())[2:n.factors()]
+                            }else if(input$plot_data == 'animal'){
+                              input$avg
+                            }
+                            )})
       selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice())
     })
     output$plot_y <- plot_y
