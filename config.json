@@ -7,6 +7,12 @@
       "Path": "data/example_data.xlsx",
       "n.Factors": 8,
       "Description": "Example experimental data in which the morphology, function and integration of dendritic spines was studied in layer 4 spiny-stellate cells from the somatosensory cortex of a mouse model of a monogenic neurodevelopmental disorder, and compared with the behaviour of neurons of wild-type mice."
+    },
+    {
+      "Name": "rat",
+      "Path": "data/rat_example.xlsx",
+      "n.Factors": 7,
+      "Description": ""
     }
   ]
 }
