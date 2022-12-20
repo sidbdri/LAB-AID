@@ -858,6 +858,8 @@ shinyServer(function(input, output, session) {
     multiInput(inputId = 'lmm_random', 'Select random factors:', choices = lmm.factors(), width = '400px', selected = tail(lmm.factors(), 2), options = list(enable_search = F))
   })
   lmm.qqp <- reactive({
+    shiny::validate(need(input$lmm_var, message=FALSE))
+    
     if(input$lmm_logtrans){
       lmm.variable <- log10((filt.data() %>% pull(input$lmm_var) %>% na.omit ) +1)
     }else{
@@ -868,6 +870,7 @@ shinyServer(function(input, output, session) {
   output$lmm_qqp <- renderPlot(lmm.qqp())
   
   output$log_error <- reactive({
+    shiny::validate(need(input$lmm_var, message=FALSE))
     cond <- any((filt.data() %>% pull(input$lmm_var)) < 0)
     return(cond)
   })
@@ -878,6 +881,8 @@ shinyServer(function(input, output, session) {
   outputOptions(output, "log_error", suspendWhenHidden = FALSE)
   
   lmm.funct <- reactive({
+    shiny::validate(need(input$lmm_var, message=FALSE))
+    
     if(length(input$lmm_random) > 0){
       rand.factors <- sapply(input$lmm_random, function(x)str_c("`", x, "`"))
       rand.factors <- paste(rand.factors, sep = ':', collapse = ':')
@@ -899,10 +904,14 @@ shinyServer(function(input, output, session) {
   })
   
   lmm.sum <- reactive({
+    shiny::validate(need(input$lmm_var, message=FALSE))
+    
     summary(lmm.funct())
   })
   
   lmm.Anova <- reactive({
+    shiny::validate(need(input$lmm_var, message=FALSE))
+    
     if(length(input$lmm_random) > 0){
       lmm.an <- Anova(lmm.funct())
     }else{
