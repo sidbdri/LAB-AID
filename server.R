@@ -12,7 +12,6 @@ library(reshape2)
 library(jsonlite)
 library(lme4)
 library(car)
-library(summarytools)
 
 source('busyIndicator.R')
 source('summarySE.R')
@@ -199,18 +198,6 @@ shinyServer(function(input, output, session) {
   })
   
   output$prev.plot <- renderPlotly(prev.plot()$plot)
-  
-  ### Stat summary
-  output$statsumFactors <- renderUI({
-    statsum <- print(dfSummary(filt.data() %>% select_at(2:n.factors())), headings = F, method = 'render', bootstrap.css = T)
-    statsum
-  })
-  output$statsumVariables <- renderUI({
-    statsum <- print(dfSummary(filt.data() %>% select_at((n.factors() + 1):ncol(filt.data()))), headings = F, method = 'render', bootstrap.css = T)
-    statsum
-  })
-  
-  
   
   ### Main plot UI elements
   observeEvent(c(input$dataset, input$plot_data, input$avg),

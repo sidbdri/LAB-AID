@@ -63,12 +63,7 @@ shinyUI(fluidPage(
                                    uiOutput('prev.factors'),
                                    radioButtons('prev.type', label = 'Plot type:', choices = list('Boxplot' = 'box', 'Violin plot' = 'violin'), inline = T),
                                    plotlyOutput('prev.plot', height = '800px') %>% withSpinner()
-                                   ),
-                          tabPanel('Summary', 
-                                   radioButtons('statsumType', label = 'Show:', inline = T, choices = list('Factors' = 'factors', 'Variables' = 'variables')),
-                                   conditionalPanel(condition = "input.statsumType == 'factors'", uiOutput('statsumFactors') %>% withSpinner()),
-                                   conditionalPanel(condition = "input.statsumType == 'variables'", uiOutput('statsumVariables') %>% withSpinner())
-                          )
+                                   )
                         )
                       )
                       ),
