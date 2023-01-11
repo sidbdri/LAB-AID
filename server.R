@@ -202,12 +202,29 @@ shinyServer(function(input, output, session) {
   ### Main plot UI elements
   observeEvent(c(input$dataset, input$plot_data, input$avg),
     {
-    
+    lastPlotVar <- reactive({
+      choice <- reactive({out.vars()})
+      if(is.null(input$plot_out_var)){
+        lpv <- choice()[1]
+      }else{
+        lpv <- input$plot_out_var
+      }
+      lpv
+    })
     plot_out_var <-  renderUI({
       choice <- reactive({out.vars()})
-      selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice())
+      selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice(), selected = lastPlotVar())
     })
     output$plot_out_var <- plot_out_var
+    
+    lastPlotEffect <- reactive({
+      if(is.null(input$plot_effect)){
+        lpe <- intersect(colnames(property.data()[2:n.factors()]), input$avg)[1]
+      }else{
+        lpe <- input$plot_effect
+      }
+      lpe
+    })
     
     plot_effect <- renderUI({
       choice <- reactive({
@@ -217,9 +234,19 @@ shinyServer(function(input, output, session) {
           input$avg
         }
       })
-      selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice())
+
+      selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice(), selected = lastPlotEffect())
     })
     output$plot_effect <- plot_effect
+    
+    lastPlotX <- reactive({
+      if(is.null(input$plot_x)){
+        lpx <- 'None'
+      }else{
+        lpx <- input$plot_x
+      }
+      lpx
+    })
     
     plot_x <- renderUI({
       choice <- reactive({c('None', 
@@ -229,9 +256,18 @@ shinyServer(function(input, output, session) {
                               input$avg
                             }
                             )})
-      selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice())
+      selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice(), selected = lastPlotX())
     })
     output$plot_x <- plot_x
+    
+    lastPlotY <- reactive({
+      if(is.null(input$plot_y)){
+        lpy <- 'None'
+      }else{
+        lpy <- input$plot_y
+      }
+      lpy
+    })
     
     plot_y <- renderUI({
       choice <- reactive({c('None', 
@@ -241,7 +277,7 @@ shinyServer(function(input, output, session) {
                               input$avg
                             }
                             )})
-      selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice())
+      selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice(), selected = lastPlotY())
     })
     output$plot_y <- plot_y
   })
