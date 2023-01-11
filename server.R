@@ -260,6 +260,18 @@ shinyServer(function(input, output, session) {
     return(pl)
   }
   
+  # Modifier for plot height scaling based on y facets
+  plotHeight <- reactive({
+    ph <- 400
+    if(input$plot_y != 'None'){
+      nFacets <- filt.data() %>% pull(input$plot_y) %>% unique %>% length
+      if(nFacets > 2){
+        ph <- 200*nFacets
+      }
+    }
+    str_c(ph, 'px')
+  })
+  
   ### Distribution plot
   
   dist.plot <- reactive({
@@ -397,6 +409,9 @@ shinyServer(function(input, output, session) {
   
   
   output$dist_plot <- renderPlotly(dist.plot()$plot)
+  output$dist_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'dist_plot', height = plotHeight())
+  )
   
   ### Errorbar plot
   
@@ -494,6 +509,9 @@ shinyServer(function(input, output, session) {
   })
   
   output$bar_plot <- renderPlotly(bar_plot())
+  output$bar_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'bar_plot', height = plotHeight())
+  )
   
 
   output$sum_data <- renderTable(sumSE_test())
@@ -531,6 +549,9 @@ shinyServer(function(input, output, session) {
     hplotly
   })
   output$hist_plot <- renderPlotly(hist_plot())
+  output$hist_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'hist_plot', height = plotHeight())
+  )
   
   ### Cumulative
   
@@ -550,6 +571,9 @@ shinyServer(function(input, output, session) {
   })
   
   output$cumsum_plot <- renderPlot(cumsum_plot())
+  output$cumsum_plot_UI <- renderUI(
+    plotOutput(outputId = 'cumsum_plot', height = plotHeight())
+  )
   
   # Correlation heatmaps
   
