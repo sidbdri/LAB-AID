@@ -596,9 +596,9 @@ shinyServer(function(input, output, session) {
     hm.data <- property.data()
     
     if(!('None' %in% input$corr_factor)){
-      hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     corrfun <- function(x, y){
@@ -630,9 +630,9 @@ shinyServer(function(input, output, session) {
     hm.data <- filt.data()
 
     if(input$corr_factor.p != 'None'){
-      hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p1, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p1, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     corrfun <- function(x, y){
@@ -666,9 +666,9 @@ shinyServer(function(input, output, session) {
     hm.data <- property.data()
 
     if(input$corr_factor.p != 'None'){
-    hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     if(input$corr_factor.p != 'None'){
