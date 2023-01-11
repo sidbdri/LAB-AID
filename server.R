@@ -3,7 +3,7 @@ library(readxl)
 library(tidyverse)
 library(magrittr)
 library(patchwork)
-library(pheatmap)
+library(ComplexHeatmap)
 library(shinyjs)
 library(plotly)
 library(shinyWidgets)
@@ -617,9 +617,9 @@ shinyServer(function(input, output, session) {
     }
 
     if('clustered' %in% input$corr_opts){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, cluster_rows = F, cluster_cols = F, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
@@ -653,9 +653,9 @@ shinyServer(function(input, output, session) {
     }
     
     if('clustered' %in% input$corr_opts.p){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F,legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
@@ -689,9 +689,9 @@ shinyServer(function(input, output, session) {
     rownames(corr.data) <- colnames(hm.data)
     
     if('clustered' %in% input$corr_opts.p){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
