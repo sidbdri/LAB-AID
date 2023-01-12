@@ -183,7 +183,8 @@ shinyServer(function(input, output, session) {
       paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
     })
     
-    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) +
+      theme(legend.position="none", axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
     
@@ -428,6 +429,7 @@ shinyServer(function(input, output, session) {
       }
     }
     dplot <- addFaceting(dplot)
+    dplot <- dplot + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
     
     dplotly <- list(plot = ggplotly(dplot, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = dplot$data)
     
@@ -538,6 +540,7 @@ shinyServer(function(input, output, session) {
       }
     }
     bplot <- addFaceting(bplot)
+    bplot <- bplot + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
     
     bplot <- ggplotly(bplot)
     bplot
