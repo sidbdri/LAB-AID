@@ -616,6 +616,17 @@ shinyServer(function(input, output, session) {
   
   # Correlation heatmaps
   
+  var.warn <- reactive({
+    if(ncol(filt.data()) - n.factors() <= 1){
+      warn <- 'Correlation module requires more than one output variable.'
+    }else{
+      warn <- ''
+    }
+    warn
+  })
+  output$var_warn <- renderUI(helpText(var.warn()))
+
+  
   output$corr_factor <- renderUI(
    selectInput(inputId = 'corr_factor', choices = c('All data' = 'None', colnames(property.data())[2:n.factors()]), label = 'Select effect:', selected = 'None')
   )

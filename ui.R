@@ -127,6 +127,7 @@ shinyUI(fluidPage(
                                                  #uiOutput('corr_levels')
                                                ),
                                                mainPanel(
+                                                 uiOutput('var_warn'),
                                                  plotOutput('corr_plot', height = '800px') %>% withSpinner()
                                                )
                                              )
