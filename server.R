@@ -3,7 +3,7 @@ library(readxl)
 library(tidyverse)
 library(magrittr)
 library(patchwork)
-library(pheatmap)
+library(ComplexHeatmap)
 library(shinyjs)
 library(plotly)
 library(shinyWidgets)
@@ -12,7 +12,6 @@ library(reshape2)
 library(jsonlite)
 library(lme4)
 library(car)
-library(summarytools)
 
 source('busyIndicator.R')
 source('summarySE.R')
@@ -184,7 +183,8 @@ shinyServer(function(input, output, session) {
       paste(str_c(colnames(prev.table)[1:n.factors()], ': ', as.character(x), '<br>'), sep = '', collapse = '')
     })
     
-    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) + theme(legend.position="none")
+    pl <- pl + geom_jitter(width = 0.2, height = 0, aes(text = tooltip.txt, colour = hl), alpha = 0.4) + scale_colour_manual(values = c('TRUE' = 'red', 'FALSE' = 'black', 'NA' = 'black')) +
+      theme(legend.position="none", axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
     
@@ -200,27 +200,32 @@ shinyServer(function(input, output, session) {
   
   output$prev.plot <- renderPlotly(prev.plot()$plot)
   
-  ### Stat summary
-  output$statsumFactors <- renderUI({
-    statsum <- print(dfSummary(filt.data() %>% select_at(2:n.factors())), headings = F, method = 'render', bootstrap.css = T)
-    statsum
-  })
-  output$statsumVariables <- renderUI({
-    statsum <- print(dfSummary(filt.data() %>% select_at((n.factors() + 1):ncol(filt.data()))), headings = F, method = 'render', bootstrap.css = T)
-    statsum
-  })
-  
-  
-  
   ### Main plot UI elements
   observeEvent(c(input$dataset, input$plot_data, input$avg),
     {
-    
+    lastPlotVar <- reactive({
+      choice <- reactive({out.vars()})
+      if(is.null(input$plot_out_var)){
+        lpv <- choice()[1]
+      }else{
+        lpv <- input$plot_out_var
+      }
+      lpv
+    })
     plot_out_var <-  renderUI({
       choice <- reactive({out.vars()})
-      selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice())
+      selectInput(inputId = 'plot_out_var', label = 'Output variable:', choices = choice(), selected = lastPlotVar())
     })
     output$plot_out_var <- plot_out_var
+    
+    lastPlotEffect <- reactive({
+      if(is.null(input$plot_effect)){
+        lpe <- intersect(colnames(property.data()[2:n.factors()]), input$avg)[1]
+      }else{
+        lpe <- input$plot_effect
+      }
+      lpe
+    })
     
     plot_effect <- renderUI({
       choice <- reactive({
@@ -230,9 +235,19 @@ shinyServer(function(input, output, session) {
           input$avg
         }
       })
-      selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice())
+
+      selectInput(inputId = 'plot_effect', label = 'Main effect:', choices = choice(), selected = lastPlotEffect())
     })
     output$plot_effect <- plot_effect
+    
+    lastPlotX <- reactive({
+      if(is.null(input$plot_x)){
+        lpx <- 'None'
+      }else{
+        lpx <- input$plot_x
+      }
+      lpx
+    })
     
     plot_x <- renderUI({
       choice <- reactive({c('None', 
@@ -242,9 +257,18 @@ shinyServer(function(input, output, session) {
                               input$avg
                             }
                             )})
-      selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice())
+      selectInput(inputId = 'plot_x', label = 'X facet:', choices = choice(), selected = lastPlotX())
     })
     output$plot_x <- plot_x
+    
+    lastPlotY <- reactive({
+      if(is.null(input$plot_y)){
+        lpy <- 'None'
+      }else{
+        lpy <- input$plot_y
+      }
+      lpy
+    })
     
     plot_y <- renderUI({
       choice <- reactive({c('None', 
@@ -254,7 +278,7 @@ shinyServer(function(input, output, session) {
                               input$avg
                             }
                             )})
-      selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice())
+      selectInput(inputId = 'plot_y', label = 'Y facet:', choices = choice(), selected = lastPlotY())
     })
     output$plot_y <- plot_y
   })
@@ -272,6 +296,18 @@ shinyServer(function(input, output, session) {
     }
     return(pl)
   }
+  
+  # Modifier for plot height scaling based on y facets
+  plotHeight <- reactive({
+    ph <- 400
+    if(input$plot_y != 'None'){
+      nFacets <- filt.data() %>% pull(input$plot_y) %>% unique %>% length
+      if(nFacets > 2){
+        ph <- 200*nFacets
+      }
+    }
+    str_c(ph, 'px')
+  })
   
   ### Distribution plot
   
@@ -393,6 +429,7 @@ shinyServer(function(input, output, session) {
       }
     }
     dplot <- addFaceting(dplot)
+    dplot <- dplot + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
     
     dplotly <- list(plot = ggplotly(dplot, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = dplot$data)
     
@@ -410,6 +447,9 @@ shinyServer(function(input, output, session) {
   
   
   output$dist_plot <- renderPlotly(dist.plot()$plot)
+  output$dist_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'dist_plot', height = plotHeight())
+  )
   
   ### Errorbar plot
   
@@ -500,6 +540,7 @@ shinyServer(function(input, output, session) {
       }
     }
     bplot <- addFaceting(bplot)
+    bplot <- bplot + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
     
     bplot <- ggplotly(bplot)
     bplot
@@ -507,6 +548,9 @@ shinyServer(function(input, output, session) {
   })
   
   output$bar_plot <- renderPlotly(bar_plot())
+  output$bar_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'bar_plot', height = plotHeight())
+  )
   
 
   output$sum_data <- renderTable(sumSE_test())
@@ -544,6 +588,9 @@ shinyServer(function(input, output, session) {
     hplotly
   })
   output$hist_plot <- renderPlotly(hist_plot())
+  output$hist_plot_UI <- renderUI(
+    plotlyOutput(outputId = 'hist_plot', height = plotHeight())
+  )
   
   ### Cumulative
   
@@ -563,8 +610,22 @@ shinyServer(function(input, output, session) {
   })
   
   output$cumsum_plot <- renderPlot(cumsum_plot())
+  output$cumsum_plot_UI <- renderUI(
+    plotOutput(outputId = 'cumsum_plot', height = plotHeight())
+  )
   
   # Correlation heatmaps
+  
+  var.warn <- reactive({
+    if(ncol(filt.data()) - n.factors() <= 1){
+      warn <- 'Correlation module requires more than one output variable.'
+    }else{
+      warn <- ''
+    }
+    warn
+  })
+  output$var_warn <- renderUI(helpText(var.warn()))
+
   
   output$corr_factor <- renderUI(
    selectInput(inputId = 'corr_factor', choices = c('All data' = 'None', colnames(property.data())[2:n.factors()]), label = 'Select effect:', selected = 'None')
@@ -609,9 +670,9 @@ shinyServer(function(input, output, session) {
     hm.data <- property.data()
     
     if(!('None' %in% input$corr_factor)){
-      hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data[hm.data[, input$corr_factor] == input$corr_levels, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     corrfun <- function(x, y){
@@ -630,9 +691,9 @@ shinyServer(function(input, output, session) {
     }
 
     if('clustered' %in% input$corr_opts){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl, cluster_rows = F, cluster_cols = F, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
@@ -643,9 +704,9 @@ shinyServer(function(input, output, session) {
     hm.data <- filt.data()
 
     if(input$corr_factor.p != 'None'){
-      hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p1, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p1, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     corrfun <- function(x, y){
@@ -666,9 +727,9 @@ shinyServer(function(input, output, session) {
     }
     
     if('clustered' %in% input$corr_opts.p){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl1, cluster_rows = F, cluster_cols = F,legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
@@ -679,9 +740,9 @@ shinyServer(function(input, output, session) {
     hm.data <- property.data()
 
     if(input$corr_factor.p != 'None'){
-    hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+    hm.data <- hm.data[hm.data[, input$corr_factor.p] == input$corr_levels.p2, ] %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }else{
-      hm.data <- hm.data %>% select_at((n.factors()+2):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
+      hm.data <- hm.data %>% select_at((n.factors()+1):(ncol(hm.data))) %>% select_if(~!all(is.na(.))) %>% as.matrix
     }
     
     if(input$corr_factor.p != 'None'){
@@ -702,9 +763,9 @@ shinyServer(function(input, output, session) {
     rownames(corr.data) <- colnames(hm.data)
     
     if('clustered' %in% input$corr_opts.p){
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }else{
-      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F)
+      pheatmap(corr.data, fontsize = 14, display_numbers = T, main = ttl2, cluster_rows = F, cluster_cols = F, legend=F, column_names_max_height=unit(100, "cm"), row_names_max_width=unit(100, "cm"))
     }
   })
   
