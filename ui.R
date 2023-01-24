@@ -22,7 +22,6 @@ shinyUI(fluidPage(
              tabPanel('Data Select',
                       fluidRow(
                         column(4, # Dataset selection
-                               #uiOutput('data.select')
                                selectInput(inputId = 'dataset', label = 'Dataset:', choices = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name, selected = jsonlite::fromJSON(txt = 'config.json')$Datasets$Name[1])
                               ),
                         column(4,
@@ -84,10 +83,8 @@ shinyUI(fluidPage(
                                      ),
                         mainPanel(
                           radioButtons(inputId = 'main_plot_type', label = 'Data display:', choices = list('Distribution plots' = 'dist', 'Bar plots' = 'bar', 'Histograms' = 'hist', 'Cumulative' = 'cumsum'), inline = T),
-                          #conditionalPanel(condition = "input.main_plot_type == 'dist'", plotlyOutput(outputId = 'dist_plot', height = '400px') %>% withSpinner()),
                           conditionalPanel(condition = "input.main_plot_type == 'dist'", uiOutput('dist_plot_UI') %>% withSpinner()),
                           conditionalPanel(condition = "input.main_plot_type == 'bar'", uiOutput('bar_plot_UI') %>% withSpinner()),
-                          #conditionalPanel(condition = "input.main_plot_type == 'bar'", tableOutput(outputId = 'sum_data')),
                           conditionalPanel(condition = "input.main_plot_type == 'hist'", uiOutput('hist_plot_UI') %>% withSpinner()),
                           conditionalPanel(condition = "input.main_plot_type == 'cumsum'", uiOutput('cumsum_plot_UI') %>% withSpinner())
                         )
@@ -124,7 +121,6 @@ shinyUI(fluidPage(
                                                sidebarPanel(
                                                  uiOutput('corr_factor'),
                                                  conditionalPanel(condition = "input.corr_factor != 'None'", uiOutput('corr_levels'))
-                                                 #uiOutput('corr_levels')
                                                ),
                                                mainPanel(
                                                  uiOutput('var_warn'),
@@ -207,8 +203,7 @@ shinyUI(fluidPage(
                         tags$div(
                           HTML(paste0("<h3>", x[1], "</h3>", "<p>", x[4], "</p><br>"))
                         )
-                      }), br(),
-                      tableOutput(outputId = 'sum_data')
+                      })
                       )
   )
   

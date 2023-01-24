@@ -89,7 +89,6 @@ shinyServer(function(input, output, session) {
     nf <- datasets %>% filter(Name == input$dataset) %>% pull(n.Factors) +1
     lapply(1:nf, function(x){
       cname <- reactive({colnames(property.data())[x]})
-      #choices <- reactive({(property.data()[, x] %>% as.character %>% unique %>% sort)})
       if(x == 1){
         choices <- reactive({(property.data()[, x] %>% as.character %>% as.numeric %>% unique %>% sort %>% trunc)})
       }else{
@@ -123,11 +122,8 @@ shinyServer(function(input, output, session) {
   filterData <- function(dfr){
     index <- rep(T, nrow(dfr))
     for(i in 1:n.factors()){
-      #df <- df %>% filter_at(i, all_vars((. %in% input[[paste0('exclusions.', colnames(property.data())[i])]])))
-      
       index <- index & (((dfr %>% pull(i)) %in% input[[paste0('exclusions.', colnames(property.data())[i])]]) | is.na(dfr %>% pull(i)))
     }
-    #index <- as.logical(index)
     dfr <- dfr[index, ] %>% mutate(pID = as.integer(pID))
     return(dfr)
   }
@@ -145,10 +141,8 @@ shinyServer(function(input, output, session) {
   prev.factors <- reactive({colnames(property.data())[2:n.factors()]})
   output$prev.factors <- renderUI(selectInput('prev.factors', 'Select main effect:', choices = prev.factors(), selected = 'Genotype'))
   
-  #filt.data <- reactive({removeExclusions(property.data())})
   filt.data <- reactive({filterData(property.data())})
-  #hi.data <- reactive({addHighlights(filt.data())})
-  
+
   output$test.table <- renderTable(filt.data())
   
   hl.pIDs <- reactive({
@@ -160,9 +154,7 @@ shinyServer(function(input, output, session) {
   })
   
 
-#  output$pIDs <- renderText(hl.pIDs())
-#  output$animals <- renderText(hl.animals())
-  
+
   out.vars <- reactive({colnames(property.data())[(n.factors() +1):ncol(property.data())]}) ### HARDCODED
   
   
@@ -187,13 +179,6 @@ shinyServer(function(input, output, session) {
       theme(legend.position="none", axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   
     ply <- list(plot = ggplotly(pl, tooltip = 'text') %>% layout(dragmode = "select", hoverlabel = list(font=list(size=10))), data = pl$data)
-    
-    #if(input$prev.type == 'box'){
-    #  nvars <- prev.table %>% pull(variable) %>% unique %>% length
-    #  for(i in 1:nvars){
-    #    ply$plot$x$data[[i]]$marker$opacity = 0
-    #  }
-    #}
     
     ply
   })
@@ -553,8 +538,6 @@ shinyServer(function(input, output, session) {
   )
   
 
-  output$sum_data <- renderTable(sumSE_test())
-  
   ### Histogram
   
   hist_plot <- reactive({
@@ -637,7 +620,6 @@ shinyServer(function(input, output, session) {
   
 
   corr_levels <- reactive({
-    #if(input$corr_factor != 'None'){
     if(!('None' %in% input$corr_factor)){
       lvls <- filt.data() %>% pull(input$corr_factor) %>% unique
     }else{
