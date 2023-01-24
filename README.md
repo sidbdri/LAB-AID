@@ -71,7 +71,7 @@ Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (
 - [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)
 - [plotly](https://cran.r-project.org/web/packages/plotly/index.html)
 - [WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)
-- [summarytools](https://cran.r-project.org/web/packages/summarytools/index.html)
 - [lme4](https://cran.r-project.org/web/packages/lme4/index.html)
 - [car](https://cran.r-project.org/web/packages/car/index.html)
 - [DT](https://cran.r-project.org/web/packages/DT/index.html)
+- [ComplexHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) (Bioconductor)
