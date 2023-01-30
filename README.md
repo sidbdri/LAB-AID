@@ -39,24 +39,6 @@ Once finished, open your web browser to the address [localhost:80](localhost:80)
 ### Installation via ShinyApps.io
 You can use the [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. You will need to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications.
 
-## Configuration
-LAB-AID is configured through the config.json file. The file has the following structure:
-
-- Title - application title. 
-- About - application and/or data set description.
-- Data sets - entries for each data set (an entry is required for every data set used).
-  - Name - name of the data set.
-  - Path - path to the data set .xlsx or .csv file.
-  - nFactors - number of experimental factors.
-  - Description - descripton of the data set.
-
-Data sets can be added and/or removed via the **Configuration** tab within the application. When adding new data sets, it is necessary to fill in the 'Dataset name' and 'Number of factors' fields; the optional 'Description' field provides text to appear on LAB-AID's **About** tab.
-
-Alternatively, the config.json file can be edited manually, but the JSON structure must be adhered to. Please refer to the [JSON](https://www.json.org/) documentation.
-
-## Input file structure
-Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (.csv) files. Tables have to be in long format, with experimental factor columns first, followed by columns containing measured variables.
-
 ## Required R packages
 - [shiny](https://cran.r-project.org/web/packages/shiny/index.html)
 - [shinyjs](https://cran.r-project.org/web/packages/shinyjs/index.html)
@@ -75,3 +57,21 @@ Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (
 - [car](https://cran.r-project.org/web/packages/car/index.html)
 - [DT](https://cran.r-project.org/web/packages/DT/index.html)
 - [ComplexHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) (Bioconductor)
+
+## Configuration
+LAB-AID is configured through the config.json file. The file has the following structure:
+
+- Title - application title. 
+- About - application and/or data set description.
+- Data sets - entries for each data set (an entry is required for every data set used).
+  - Name - name of the data set.
+  - Path - path to the data set .xlsx or .csv file.
+  - nFactors - number of experimental factors.
+  - Description - descripton of the data set.
+
+Data sets can be added and/or removed via the **Configuration** tab within the application. When adding new data sets, it is necessary to fill in the 'Dataset name' and 'Number of factors' fields; the optional 'Description' field provides text to appear on LAB-AID's **About** tab.
+
+Alternatively, the config.json file can be edited manually, but the JSON structure must be adhered to. Please refer to the [JSON](https://www.json.org/) documentation.
+
+## Input file structure
+Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (.csv) files. Tables have to be in long format, with experimental factor columns first, followed by columns containing measured variables.
