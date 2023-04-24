@@ -18,23 +18,26 @@ LAB-AID is an [R Shiny](https://shiny.rstudio.com/) application. It can be run t
 
 ### Local installation via RStudio
 
-The application can be run on your computer locally via RStudio. First, please follow the instructions [here](https://posit.co/download/rstudio-desktop/) to download and install R and RStudio Desktop, if you do not already have these. Then download all files from the LAB-AID repository (for example, by clicking the green 'Code' button at the top of this page, selecting 'Download ZIP', and uncompressing the downloaded ZIP file). Finally, execute the following command in the [RStudio console pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html), replacing ```PATH``` with the path to the folder the repository files have been saved in.
+The LAB-AID application can be run on your computer locally via RStudio. First, please follow the instructions [here](https://posit.co/download/rstudio-desktop/) to download and install R and RStudio Desktop, if you do not already have these. Then download all files from the LAB-AID repository (for example, by clicking the green 'Code' button at the top of this page, selecting 'Download ZIP', and uncompressing the downloaded ZIP file). Finally, execute the following command in the [RStudio Console pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html), replacing ```PATH``` with the path to the folder the repository files have been saved in:
 
 ```
 shiny::runApp(appDir = 'PATH')
 ```
-Alternatively, you can open the files ```ui.R``` or ```server.R``` (or both) in RStudio, and press the 'Run App' button in the top right corner of the [RStudio source pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html).
+Alternatively, you can open the files ```ui.R``` or ```server.R``` (or both) in RStudio, and press the 'Run App' button in the top right corner of the [RStudio Source pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html).
 
-Make sure your R session has all the required packages installed (see [below](#r-versions-and-required-r-packages) for the full list of required packages).
+Before running LAB-AID, make sure your R session has all the required packages installed (see [below](#r-versions-and-required-r-packages) for the full list of required packages). Note that it is possible that if you have an older version of R installed, you may encounter problems installing the packages that LAB-AID needs; if so, you can run the application through one of the alternative methods described below.
 
 ### Installation via Docker image
 
-LAB-AID [Docker](https://www.docker.com) image is hosted on [Docker hub](https://hub.docker.com/repository/docker/zkozic/lab-aid). Please refer to [Docker documentation](https://docs.docker.com/get-docker/) for instructions on how to setup Docker on your system.
-The image can be downloaded and run by executing the following command:
+[Docker](https://www.docker.com) is a platform for developing, shipping, and running applications which may have complex dependencies (such as the set of R packages on which LAB-AID relies). The computing environment needed to run a particular application is contained in a [Docker "container image"](https://docs.docker.com/get-started/). The LAB-AID docker container image is hosted on [Docker Hub](https://hub.docker.com/repository/docker/zkozic/lab-aid) (n.b. a Docker Hub account is required to see this page, but is _not_ required to download and run the LAB-AID image). 
+
+To run LAB-AID via the Docker container image, first please refer to [Docker documentation](https://docs.docker.com/get-docker/) for instructions on how to setup Docker Desktop on your system. Then the image can be downloaded and run by executing the following command line (for example by opening the 'Terminal' application on Mac OS, pasting the command, and pressing return):
+
 ```
 docker run --rm -itd -p 80:80 zkozic/lab-aid:latest
 ```
-Once finished, open your web browser to the address [localhost:80](localhost:80).
+
+Once this has finished, open your web browser and navigate to the address [localhost:80](http://localhost:80) (for example by clicking this link).
 
 ### Installation via ShinyApps.io
 
