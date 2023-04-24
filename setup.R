@@ -1,5 +1,5 @@
 ######
-# In a clean R installation (R 4.2 highly recommended) this script will install
+# In a clean R installation (R 4.2 or higher recommended) this script will install
 # the packages required to run LAB-AID
 ######
 
