@@ -41,11 +41,13 @@ Once this has finished, open your web browser and navigate to the address [local
 
 ### Installation via ShinyApps.io
 
-You can use the [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. You will need to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications.
+If preferred, you can also use the [shinyapps.io](https://www.shinyapps.io/) web hosting service to deploy the LAB-AID application. You will need to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. To do this, please follow the detailed instructions in the [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications from RStudio Desktop to shinyapps.io. After deployment, LAB-AID can then be accessed through the web browser on the shinyapps.io website.
 
 ### Installation via Shiny Server
 
-If you have access to a Shiny Server, all that is required is to download the repository into the directory containing Shiny applications. Make sure the R installation that the Shiny Server is using has all the required packages installed, and that the Shiny Server has sufficient privileges to read and write files within the application directory.
+(_n.b. advanced usage_)
+
+If you have access to, or manage, a [Shiny Server](https://posit.co/products/open-source/shinyserver/) installation, all that is required is to download the LAB-AID repository into the directory containing Shiny applications. Make sure that the R installation that the Shiny Server is using has [all the required packages installed](#r-versions-and-required-r-packages), and that the Shiny Server has sufficient privileges to read and write files within the application directory.
 
 ## R versions and required R packages
 - [shiny](https://cran.r-project.org/web/packages/shiny/index.html)
@@ -67,7 +69,8 @@ If you have access to a Shiny Server, all that is required is to download the re
 - [ComplexHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) (Bioconductor)
 
 ## Configuration
-LAB-AID is configured through the config.json file. The file has the following structure:
+
+LAB-AID is configured through the ```config.json``` file. The file has the following structure:
 
 - Title - application title. 
 - About - application and/or data set description.
@@ -77,9 +80,8 @@ LAB-AID is configured through the config.json file. The file has the following s
   - nFactors - number of experimental factors.
   - Description - descripton of the data set.
 
-Data sets can be added and/or removed via the **Configuration** tab within the application. When adding new data sets, it is necessary to fill in the 'Dataset name' and 'Number of factors' fields; the optional 'Description' field provides text to appear on LAB-AID's **About** tab.
-
-Alternatively, the config.json file can be edited manually, but the JSON structure must be adhered to. Please refer to the [JSON](https://www.json.org/) documentation.
+In general, we recommend adding and/or removing data sets via the **Configuration** tab within the running LAB-AID application. When adding new data sets, it is necessary to fill in the 'Dataset name' and 'Number of factors' fields; the optional 'Description' field provides text to appear on LAB-AID's **About** tab. Alternatively, the ```config.json``` file can be edited manually, but in this case, the correct JSON structure must be adhered to; please refer to the [JSON](https://www.json.org/) documentation for further details on this format.
 
 ## Input file structure
-Input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (.csv) files. Tables have to be in long format, with experimental factor columns first, followed by columns containing measured variables.
+
+LAB-AID input files can be Excel spreadsheets (.xls or .xlsx) or comma-separated value (.csv) files. Tables have to be in long format, with experimental factor columns first, followed by columns containing measured variables.
