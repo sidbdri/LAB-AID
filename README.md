@@ -39,7 +39,7 @@ docker run --rm -itd -p 80:80 zkozic/lab-aid:latest
 
 Once this has finished, open your web browser and navigate to the address [localhost:80](http://localhost:80) (for example by clicking this link).
 
-### Installation via ShinyApps.io
+### Installation via shinyapps.io
 
 If preferred, you can also use the [shinyapps.io](https://www.shinyapps.io/) web hosting service to deploy the LAB-AID application. You will need to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. To do this, please follow the detailed instructions in the [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications from RStudio Desktop to shinyapps.io. After deployment, LAB-AID can then be accessed through the web browser on the shinyapps.io website.
 
