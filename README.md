@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/206056644.svg)](https://zenodo.org/badge/latestdoi/206056644)
 
 # LAB-AID
-**LAB-AID** (**Lab**oratory **A**utomated **I**nterrogation of **D**ata): an interactive web application for visualization of multi-level data from biological experiments.
+**LAB-AID** (**Lab**oratory **A**utomated **I**nterrogation of **D**ata) is an interactive web application for visualization of multi-level data from biological experiments.
 
 ## About
 
