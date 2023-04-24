@@ -36,7 +36,7 @@ Note that it is possible that if you have an older version of R installed, you m
 
 [Docker](https://www.docker.com) is a platform for developing, shipping, and running applications which may have complex dependencies (such as the set of R packages on which LAB-AID relies). The computing environment needed to run a particular application is encapsulated in a [Docker "container image"](https://docs.docker.com/get-started/). The LAB-AID docker container image is hosted on [Docker Hub](https://hub.docker.com/repository/docker/zkozic/lab-aid) (n.b. a Docker Hub account is required to see this page, but is _not_ required to download and run the LAB-AID image). 
 
-To run LAB-AID via the Docker container image, first please refer to [Docker documentation](https://docs.docker.com/get-docker/) for instructions on how to setup Docker Desktop on your system. Then the container image can be downloaded and run by executing the following command line (for example by opening the 'Terminal' application on Mac OS, pasting the command, and pressing ```return```):
+To run LAB-AID via the Docker container image, first please refer to the [Docker documentation](https://docs.docker.com/get-docker/) for instructions on how to setup Docker Desktop on your system. Then the container image can be downloaded and run by executing the following command line (for example by opening the 'Terminal' application on Mac OS, pasting the command, and pressing ```return```):
 
 ```
 docker run --rm -itd -p 80:80 zkozic/lab-aid:latest
