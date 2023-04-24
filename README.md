@@ -14,21 +14,21 @@ A key step in understanding the results of biological experiments is visualizati
 For more details, please see [our preprint](https://www.biorxiv.org/content/10.1101/763318v4).
 
 ## Installation
-LAB-AID is an [R Shiny](https://shiny.rstudio.com/) application. It can be run through [R Studio](https://www.rstudio.com/) locally, hosted via [Shiny Server](https://www.rstudio.com/products/shiny/shiny-server/) or run from a [Docker](https://www.docker.com) image. It is also possible to deploy the application to [shinyapps.io](https://www.shinyapps.io/). 
+LAB-AID is an [R Shiny](https://shiny.rstudio.com/) application. It can be run through [R Studio](https://www.rstudio.com/) locally, hosted via [Shiny Server](https://www.rstudio.com/products/shiny/shiny-server/) or run from a [Docker](https://www.docker.com) image. It is also possible to deploy the application to [shinyapps.io](https://www.shinyapps.io/). In the latter three cases, you will access the LAB-AID application through a web browser.
 
 ### Local installation via RStudio
-The application can be run on your computer locally via RStudio. Simply download all files from the repository and execute the following command in RStudio, replacing PATH with the path to the folder the files have been saved in.
+
+The application can be run on your computer locally via RStudio. First, please follow the instructions [here](https://posit.co/download/rstudio-desktop/) to download and install R and RStudio Desktop, if you do not already have these. Then download all files from the LAB-AID repository (for example, by clicking the green 'Code' button at the top of this page, selecting 'Download ZIP', and uncompressing the downloaded ZIP file). Finally, execute the following command in the [RStudio console pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html), replacing ```PATH``` with the path to the folder the repository files have been saved in.
+
 ```
 shiny::runApp(appDir = 'PATH')
 ```
-Alternatively, you can open scripts ui.R or server.R (or both) in RStudio, and press the 'Run App' button in the top right corner.
+Alternatively, you can open the files ```ui.R``` or ```server.R``` (or both) in RStudio, and press the 'Run App' button in the top right corner of the [RStudio source pane](https://docs.posit.co/ide/user/ide/guide/ui/ui-panes.html).
 
-Make sure your R session has all the required packages installed (see below for the full list of required packages).
-
-### Installation via Shiny Server
-If you have access to a Shiny Server, all that is required is to download the repository into the directory containing Shiny applications. Make sure the R installation that the Shiny Server is using has all the required packages installed, and that the Shiny Server has sufficient privileges to read and write files within the application directory.
+Make sure your R session has all the required packages installed (see [below](#r-versions-and-required-r-packages) for the full list of required packages).
 
 ### Installation via Docker image
+
 LAB-AID [Docker](https://www.docker.com) image is hosted on [Docker hub](https://hub.docker.com/repository/docker/zkozic/lab-aid). Please refer to [Docker documentation](https://docs.docker.com/get-docker/) for instructions on how to setup Docker on your system.
 The image can be downloaded and run by executing the following command:
 ```
@@ -37,9 +37,14 @@ docker run --rm -itd -p 80:80 zkozic/lab-aid:latest
 Once finished, open your web browser to the address [localhost:80](localhost:80).
 
 ### Installation via ShinyApps.io
+
 You can use the [shinyapps.io](https://www.shinyapps.io/) hosting service to deploy the LAB-AID application. You will need to create a [shinyapps.io](https://www.shinyapps.io/) account and to configure your local RStudio client. Please follow the the instructions in [shinyapps.io documentation](https://docs.rstudio.com/shinyapps.io/getting-started.html) on how to deploy applications.
 
-## Required R packages
+### Installation via Shiny Server
+
+If you have access to a Shiny Server, all that is required is to download the repository into the directory containing Shiny applications. Make sure the R installation that the Shiny Server is using has all the required packages installed, and that the Shiny Server has sufficient privileges to read and write files within the application directory.
+
+## R versions and required R packages
 - [shiny](https://cran.r-project.org/web/packages/shiny/index.html)
 - [shinyjs](https://cran.r-project.org/web/packages/shinyjs/index.html)
 - [shinyWidgets](https://github.com/dreamRs/shinyWidgets)
