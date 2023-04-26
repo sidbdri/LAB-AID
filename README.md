@@ -5,7 +5,7 @@
 
 ## About
 
-A key step in understanding the results of biological experiments is visualization of the data, particular when measurements exist within a hierarchy of interdependence. LAB-AID is a simple tool specifically designed to automatically visualize and query data resulting from such experiments. It aims to:
+A key step in understanding the results of biological experiments is visualization of the data, particularly when measurements exist within a hierarchy of interdependence. LAB-AID is a simple tool specifically designed to automatically visualize and query data resulting from such experiments. It aims to:
 
 * lead to improved understanding of results
 * help to avoid misleading interpretation of statistics
