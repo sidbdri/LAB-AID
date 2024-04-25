@@ -11,7 +11,7 @@ A key step in understanding the results of biological experiments is visualizati
 * help to avoid misleading interpretation of statistics
 * easily identify outliers and sources of batch and confounding effects
 
-For more details of LAB-AID's functionality, please see [our preprint](https://www.biorxiv.org/content/10.1101/763318v5).
+For more details of LAB-AID's functionality, please see [our paper](https://academic.oup.com/braincomms/article/6/2/fcae074/7616116).
 
 ## Installation
 LAB-AID is an [R Shiny](https://shiny.rstudio.com/) application. It can be run through [R Studio](https://www.rstudio.com/) locally, hosted via [Shiny Server](https://www.rstudio.com/products/shiny/shiny-server/) or run from a [Docker](https://www.docker.com) image. It is also possible to deploy the application to [shinyapps.io](https://www.shinyapps.io/). In the latter three cases, you will access the LAB-AID application through a web browser.
